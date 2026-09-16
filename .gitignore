@@ -1,0 +1,24 @@
+# Build output
+.build/
+build/
+*.dmg
+
+# Claude / local-only
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.mcp.json
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets/
+private/
+.private/
+sessions/
+.sessions/
+*.session
+.DS_Store
+.swiftpm/
