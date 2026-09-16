@@ -129,6 +129,8 @@ A fork can publish under its own identity by setting `TARDY_SIGNING_IDENTITY`,
 
 `site/index.html` is the landing page at `https://tardy.vpetkov.net`, served from the same
 R2 bucket. `scripts/publish-site.sh` uploads it; it is deliberately separate from releases.
+The page reads the current version and minimum macOS from `/appcast.xml` in the browser, so a
+release never needs a site edit.
 An R2 custom domain has no index document, so a Cloudflare rewrite rule on the zone maps `/`
 to `/index.html`.
 
