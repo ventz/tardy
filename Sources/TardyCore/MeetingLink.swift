@@ -11,12 +11,14 @@ public enum MeetingLinks {
     private static let body = #"[^\s<>"'\])}]+"#
 
     /// Every provider Tardy recognizes, in priority order: the first match wins.
+    /// Hosts that allow subdomains use `(?:[\w-]+\.)*` so the provider name must start
+    /// a DNS label: `acme.zoom.us` matches, a lookalike like `attacker-zoom.us` does not.
     /// Keep README.md's provider list in sync with this table.
     public static let providers: [(pattern: String, platform: String)] = [
-        (#"https?://[\w.-]*zoom(?:gov)?\.(?:us|com)/(?:j|w|s|my|wc|meeting/register)/"# + body, "Zoom"),
+        (#"https?://(?:[\w-]+\.)*zoom(?:gov)?\.(?:us|com)/(?:j|w|s|my|wc|meeting/register)/"# + body, "Zoom"),
         (#"https?://teams\.(?:microsoft|live)\.com/(?:l/meetup-join|meet)/"# + body, "Microsoft Teams"),
         (#"https?://meet\.google\.com/[a-z]{3}-[a-z]{4}-[a-z]{3}"#, "Google Meet"),
-        (#"https?://[\w.-]*webex\.com/"# + body, "Webex"),
+        (#"https?://(?:[\w-]+\.)*webex\.com/"# + body, "Webex"),
         (#"https?://(?:global\.gotomeeting\.com/join|meet\.goto\.com)/"# + body, "GoTo Meeting"),
         (#"https?://chime\.aws/"# + body, "Amazon Chime"),
         (#"https?://app\.slack\.com/huddle/"# + body, "Slack Huddle"),

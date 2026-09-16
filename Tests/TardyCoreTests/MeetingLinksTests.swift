@@ -26,6 +26,30 @@ import Testing
         #expect(link?.url.absoluteString == url)
     }
 
+    @Test(arguments: [
+        "https://attacker-zoom.us/j/123",
+        "https://myzoom.us/j/123",
+        "https://evilzoomgov.com/j/123",
+        "https://evilwebex.com/meet/someone",
+        "https://zoom.us.evil.com/j/123",
+        "https://zoom.us@evil.com/j/123",
+        "https://acme.zoom.us:8443/j/123",
+    ])
+    func rejectsLookalikeHosts(url: String) {
+        #expect(MeetingLinks.extract(location: url, url: nil, notes: nil) == nil)
+    }
+
+    @Test(arguments: [
+        "https://zoom.us/j/1",
+        "https://us02web.zoom.us/j/1",
+        "https://a.b-c.zoom.us/j/1",
+        "https://webex.com/meet/x",
+        "https://acme.my.webex.com/meet/x",
+    ])
+    func acceptsRealSubdomains(url: String) {
+        #expect(MeetingLinks.extract(location: url, url: nil, notes: nil)?.url.absoluteString == url)
+    }
+
     @Test func htmlNotesDoNotSwallowMarkup() {
         let notes = #"<a href="https://acme.zoom.us/j/42">Join</a>"#
         #expect(MeetingLinks.extract(location: nil, url: nil, notes: notes)?.url.absoluteString
