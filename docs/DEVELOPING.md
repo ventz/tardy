@@ -16,6 +16,11 @@
 - macOS 14+ and Xcode 16+ (Swift 6 toolchain). No Xcode project is needed; Tardy is a Swift package.
 - For signed builds, an Apple Developer account.
 
+```bash
+git clone https://github.com/ventz/tardy
+cd tardy
+```
+
 ## Build and run
 
 ```bash
@@ -96,7 +101,7 @@ Tardy updates itself with [Sparkle](https://sparkle-project.org).
 
 ## Cutting a release
 
-1. Bump `CFBundleShortVersionString` and `CFBundleVersion` in `Resources/Info.plist`.
+1. Bump `CFBundleShortVersionString` and `CFBundleVersion` in `Resources/Info.plist`, then commit and push.
 2. Run:
 
 ```bash
@@ -109,6 +114,12 @@ signs the DMG, notarizes and staples it, checks it with `spctl`, regenerates the
 from the published feed plus local archives, and uploads the versioned DMG, `Tardy.dmg`
 (always the newest) and finally `appcast.xml`. The feed goes last so nothing is advertised
 before it can be downloaded.
+
+When `origin` is a GitHub repository, a real release also requires a clean checkout whose
+HEAD is pushed, refuses a version that is already tagged (checked before notarizing), and
+finishes by creating the GitHub release: tag `vX.Y.Z` at the build commit, the notarized
+DMG attached, install and verification notes with its SHA-256, marked latest. Without a
+GitHub remote that step is skipped.
 
 A fork can publish under its own identity by setting `TARDY_SIGNING_IDENTITY`,
 `TARDY_NOTARY_PROFILE`, `TARDY_SPARKLE_ACCOUNT`, `TARDY_BUCKET` and `TARDY_FEED_HOST`

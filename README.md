@@ -56,7 +56,8 @@ open Tardy.dmg
 # Drag Tardy to Applications, then launch it and allow Calendar access
 ```
 
-Requires macOS 14 (Sonoma) or later. The app is signed and notarized by Apple.
+Requires macOS 14 (Sonoma) or later. The app is signed and notarized by Apple, and
+every version is also on the [Releases page](https://github.com/ventz/tardy/releases).
 To build from source, see [docs/DEVELOPING.md](docs/DEVELOPING.md).
 
 ## Features
@@ -122,7 +123,8 @@ Settings can be exported to a file and imported on another Mac; see
 
 ## Contributing
 
-Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+[Issues](https://github.com/ventz/tardy/issues) and pull requests are welcome. See
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
