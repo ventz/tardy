@@ -226,8 +226,10 @@ say "Creating GitHub release $tag ($github_repo)"
 
 checksum=$(shasum -a 256 "$dmg")
 checksum=${checksum%% *}
-# Outside release_dir: generate_appcast treats notes files there as its own
-github_notes=$(mktemp -t Tardy-github-notes)
+# Outside release_dir: generate_appcast treats notes files there as its own.
+# An explicit XXXXXX template: `mktemp -t prefix` is BSD-only, and GNU coreutils'
+# mktemp (first on PATH with Homebrew) rejects it -- that failed the 1.0.0 release.
+github_notes=$(mktemp "${TMPDIR:-/tmp}/tardy-github-notes.XXXXXX")
 {
     if [[ -n "$notes_file" ]]; then
         cat "$notes_file"
