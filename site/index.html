@@ -294,7 +294,7 @@
       </a>
     </div>
 
-    <p class="meta">
+    <p class="meta" id="release">
       Universal (Apple silicon &amp; Intel) &middot; macOS 14+ &middot; signed and notarized &middot; updates itself
     </p>
   </header>
@@ -368,5 +368,24 @@
     MIT licensed &middot; &copy; Ventz Petkov
   </footer>
 </main>
+<script>
+  // The version comes from the live Sparkle feed, so the page never needs editing
+  // for a release. If the feed can't be read, the static line above stays as is.
+  fetch("/appcast.xml", { cache: "no-cache" })
+    .then(r => r.ok ? r.text() : Promise.reject(r.status))
+    .then(xml => {
+      const doc = new DOMParser().parseFromString(xml, "application/xml");
+      const item = doc.getElementsByTagName("item")[0];
+      const field = name => item?.getElementsByTagName("sparkle:" + name)[0]?.textContent?.trim();
+      const version = field("shortVersionString");
+      if (!version) return;
+      const minimum = field("minimumSystemVersion");
+      const parts = ["Version " + version, "universal (Apple silicon &amp; Intel)"];
+      if (minimum) parts.push("macOS " + minimum.replace(/\.0$/, "") + "+");
+      parts.push("signed and notarized", "updates itself");
+      document.getElementById("release").innerHTML = parts.join(" &middot; ");
+    })
+    .catch(() => {});
+</script>
 </body>
 </html>
