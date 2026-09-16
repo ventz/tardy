@@ -36,7 +36,7 @@ else
     # A stable development identity keeps the Calendar permission across rebuilds;
     # ad-hoc signatures change every build and macOS asks again each time.
     identities=$(security find-identity -v -p codesigning)
-    identity=$(printf '%s\n' "$identities" | sed -n 's/.*"\(Apple Development: [^"]*\)".*/\1/p' | head -1)
+    identity=$(printf '%s\n' "$identities" | awk -F'"' '/Apple Development: / && !found {print $2; found = 1}')
     [[ -n "$identity" ]] || identity="-"
     timestamp="--timestamp=none"
 fi

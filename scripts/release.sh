@@ -22,6 +22,7 @@
 # publish under its own identity, bucket and domain.
 
 set -euo pipefail
+trap 'echo "release.sh: line $LINENO failed (exit $?): $BASH_COMMAND" >&2' ERR
 
 readonly IDENTITY="${TARDY_SIGNING_IDENTITY:-Developer ID Application: Ventzislav Petkov (8J9W3ZG4ZN)}"
 readonly NOTARY_PROFILE="${TARDY_NOTARY_PROFILE:-moo-notary}"
