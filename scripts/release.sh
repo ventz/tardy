@@ -150,7 +150,10 @@ if [[ $dry_run -eq 0 ]]; then
         fi
         command rm -f "$live_feed"
     fi
-    if curl -fsI "$FEED_HOST/Tardy-$plist_version.dmg" >/dev/null 2>&1; then
+    # A unique query string keeps this probe out of Cloudflare's cache: a plain
+    # request caches the 404, and the DMG uploaded minutes later would keep
+    # answering 404 to updaters until that entry expired (hit in 1.0.1).
+    if curl -fsI "$FEED_HOST/Tardy-$plist_version.dmg?preflight=$(date +%s)" >/dev/null 2>&1; then
         echo "Tardy-$plist_version.dmg is already published -- bump the version" >&2
         exit 1
     fi
