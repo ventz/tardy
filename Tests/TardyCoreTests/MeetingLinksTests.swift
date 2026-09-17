@@ -71,4 +71,19 @@ import Testing
         #expect(!MeetingLinks.isSafeToOpen(URL(string: "http://zoom.us/j/1")!))
         #expect(!MeetingLinks.isSafeToOpen(URL(string: "file:///etc/passwd")!))
     }
+
+    @Test(arguments: [
+        "https://evil.example/j/1",
+        "https://user:pw@acme.zoom.us/j/1",
+        "https://acme.zoom.us:8443/j/1",
+        "https://evil.example/?next=https://acme.zoom.us/j/1",
+    ])
+    func refusesToOpenAnythingButAKnownProviderLink(url: String) {
+        #expect(!MeetingLinks.isSafeToOpen(URL(string: url)!))
+    }
+
+    /// An http link would show a Join button that then refuses to open.
+    @Test func ignoresHttpLinks() {
+        #expect(MeetingLinks.extract(location: "http://acme.zoom.us/j/1", url: nil, notes: nil) == nil)
+    }
 }

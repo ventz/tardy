@@ -1,6 +1,33 @@
 import Foundation
 
 public enum Formatting {
+    /// An event title made safe to show: control, format (bidi overrides, zero-width),
+    /// line and paragraph separator characters become spaces, then runs of whitespace
+    /// collapse. Invite titles are untrusted, and those characters could reorder the
+    /// row's detail line or fake a second line. U+200D stays so emoji sequences survive.
+    public static func displaySafe(_ text: String) -> String {
+        var scalars = String.UnicodeScalarView()
+        var lastWasSpace = true
+        for scalar in text.unicodeScalars {
+            let blanked: Bool
+            switch scalar.properties.generalCategory {
+            case .control, .lineSeparator, .paragraphSeparator: blanked = true
+            case .format: blanked = scalar != "\u{200D}"
+            default: blanked = scalar.properties.isWhitespace
+            }
+            if blanked {
+                if !lastWasSpace { scalars.append(" ") }
+                lastWasSpace = true
+            } else {
+                scalars.append(scalar)
+                lastWasSpace = false
+            }
+        }
+        var result = String(scalars)
+        if result.hasSuffix(" ") { result.removeLast() }
+        return result
+    }
+
     private static func formatter(_ format: String, _ locale: Locale) -> DateFormatter {
         let f = DateFormatter()
         f.locale = locale

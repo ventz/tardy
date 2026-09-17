@@ -13,6 +13,10 @@ struct CalendarGroup: Equatable, Identifiable {
     var id: String { source }
 }
 
+private extension String {
+    var nonEmpty: String? { isEmpty ? nil : self }
+}
+
 @MainActor
 final class CalendarService {
     let store = EKEventStore()
@@ -43,7 +47,7 @@ final class CalendarService {
             .sorted { $0.source.localizedCaseInsensitiveCompare($1.source) == .orderedAscending }
     }
 
-    /// Today's timed events, from 10 minutes ago (so LATE meetings survive a refresh)
+    /// Today's timed events you haven't declined, from 10 minutes ago (so LATE meetings survive a refresh)
     /// to the end of the day.
     func refresh(disabled: Set<String>, now: Date = Date()) {
         lastFetch = now
@@ -56,13 +60,18 @@ final class CalendarService {
 
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: calendars)
         meetings = store.events(matching: predicate)
-            .filter { !$0.isAllDay }
+            .filter { event in
+                MeetingFilter.includes(
+                    isAllDay: event.isAllDay,
+                    isCanceled: event.status == .canceled,
+                    declinedByMe: event.attendees?.first(where: \.isCurrentUser)?.participantStatus == .declined)
+            }
             .map { event in
                 // eventIdentifier is shared by every occurrence of a recurring event
                 let id = "\(event.eventIdentifier ?? UUID().uuidString)@\(event.startDate.timeIntervalSince1970)"
                 return Meeting(
                     id: id,
-                    title: event.title?.isEmpty == false ? event.title! : "(No title)",
+                    title: Formatting.displaySafe(event.title ?? "").nonEmpty ?? "(No title)",
                     start: event.startDate,
                     end: event.endDate,
                     calendarID: event.calendar.calendarIdentifier,

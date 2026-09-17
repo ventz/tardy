@@ -55,8 +55,13 @@ public struct HotKeyShortcut: Codable, Equatable, Sendable {
     }
 
     /// A global shortcut needs ⌘, ⌥ or ⌃: Shift alone would steal ordinary typing.
+    /// The label and key equivalent are bounded too, since an imported settings file
+    /// is untrusted.
     public var isValid: Bool {
         carbonModifiers & (Self.carbonCommand | Self.carbonOption | Self.carbonControl) != 0
+            && keyCode <= 0xFF
+            && !key.isEmpty && key.count <= 12
+            && keyEquivalent.count <= 1
     }
 
     /// Apple's order: ⌃⌥⇧⌘ then the key, e.g. "⇧⌘M".

@@ -377,13 +377,15 @@
       const doc = new DOMParser().parseFromString(xml, "application/xml");
       const item = doc.getElementsByTagName("item")[0];
       const field = name => item?.getElementsByTagName("sparkle:" + name)[0]?.textContent?.trim();
+      // Feed values are checked and set as text, never markup
+      const numeric = /^\d+(\.\d+){0,3}$/;
       const version = field("shortVersionString");
-      if (!version) return;
+      if (!version || !numeric.test(version)) return;
       const minimum = field("minimumSystemVersion");
-      const parts = ["Version " + version, "universal (Apple silicon &amp; Intel)"];
-      if (minimum) parts.push("macOS " + minimum.replace(/\.0$/, "") + "+");
+      const parts = ["Version " + version, "universal (Apple silicon & Intel)"];
+      if (minimum && numeric.test(minimum)) parts.push("macOS " + minimum.replace(/\.0$/, "") + "+");
       parts.push("signed and notarized", "updates itself");
-      document.getElementById("release").innerHTML = parts.join(" &middot; ");
+      document.getElementById("release").textContent = parts.join(" \u00b7 ");
     })
     .catch(() => {});
 </script>

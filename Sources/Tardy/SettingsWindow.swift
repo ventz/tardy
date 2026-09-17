@@ -72,7 +72,14 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             let snapshot = try SettingsSnapshot.decode(Data(contentsOf: url))
             let confirm = NSAlert()
             confirm.messageText = "Replace your Tardy settings?"
-            confirm.informativeText = "Mute, clock and all \(snapshot.calendars.count) calendar settings will be replaced with the ones in “\(url.lastPathComponent)”."
+            // Name the shortcut: an imported one is registered system-wide
+            var shortcutNote = ""
+            if let imported = snapshot.shortcut, imported.shortcut.isValid {
+                shortcutNote = imported.enabled
+                    ? " The menu shortcut becomes \(imported.shortcut.display)."
+                    : " The menu shortcut will be turned off."
+            }
+            confirm.informativeText = "Mute, clock and all \(snapshot.calendars.count) calendar settings will be replaced with the ones in “\(url.lastPathComponent)”." + shortcutNote
             confirm.addButton(withTitle: "Import")
             confirm.addButton(withTitle: "Cancel")
             confirm.beginSheetModal(for: window) { [weak self] response in

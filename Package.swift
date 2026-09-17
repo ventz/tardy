@@ -8,7 +8,7 @@ let package = Package(
         .executable(name: "Tardy", targets: ["Tardy"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.9.0"),
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.0"),
     ],
     targets: [
         // Pure logic (alert states, scheduling, formatting, link parsing): no AppKit, fully tested

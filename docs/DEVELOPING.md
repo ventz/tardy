@@ -93,8 +93,14 @@ Tardy updates itself with [Sparkle](https://sparkle-project.org).
 
 - **Guard the private key.** Every installed copy trusts the public key baked into it; lose the
   private key and those copies can never update again. Back it up once into a password manager:
-  `.build/artifacts/sparkle/Sparkle/bin/generate_keys --account tardy -x tardy-sparkle-key.txt`,
-  then delete the file.
+  `.build/artifacts/sparkle/Sparkle/bin/generate_keys --account tardy -x ~/tardy-sparkle-key.txt`,
+  then delete the file. Export it outside the repo: this repository is public, and a committed
+  private key lets anyone ship an update to every installed copy (`.gitignore` also blocks
+  `*sparkle*key*` as a backstop).
+- **The feed is signed.** `SURequireSignedFeed` and `SUVerifyUpdateBeforeExtraction` are on
+  (from 1.0.1), so `generate_appcast` signs `appcast.xml` and its release notes with the same
+  key. Never edit a published feed by hand: the signature breaks and those copies stop
+  updating. `release.sh` refuses to publish a feed without a signature.
 - **Bump `CFBundleVersion` every release.** Sparkle orders releases by it, not by
   `CFBundleShortVersionString`.
 - **Debug builds never check** (no `SUFeedURL`, `.debug` bundle ID).
@@ -109,19 +115,29 @@ scripts/release.sh --dry-run            # build, sign, audit, DMG -- publishes n
 scripts/release.sh --notes notes.md     # notarize, staple, appcast, publish
 ```
 
-The release script tests, builds, audits every signature and the entitlements, builds and
-signs the DMG, notarizes and staples it, checks it with `spctl`, regenerates the appcast
-from the published feed plus local archives, and uploads the versioned DMG, `Tardy.dmg`
+Before building, the release script refuses a `CFBundleVersion` that isn't above the newest
+build in the feed, a version already in the feed or already published as a DMG, and (for a
+real release) a live `appcast.xml` that differs from the local master copy in
+`~/tardy-releases` -- a changed feed means the bucket was written from somewhere else.
+
+It then tests, builds, audits every signature (Developer ID, team `8J9W3ZG4ZN`) and the
+entitlements, builds and signs the DMG, notarizes and staples it, checks it with `spctl`,
+regenerates and signs the appcast from the local master feed plus archives, and uploads the versioned DMG, `Tardy.dmg`
 (always the newest) and finally `appcast.xml`. The feed goes last so nothing is advertised
 before it can be downloaded.
 
 When `origin` is a GitHub repository, a real release also requires a clean checkout whose
-HEAD is pushed, refuses a version that is already tagged (checked before notarizing), and
+HEAD is pushed (untracked files under `Sources/` or `Resources/` count, since SwiftPM would
+compile them), refuses a version that is already tagged (checked before notarizing), and
 finishes by creating the GitHub release: tag `vX.Y.Z` at the build commit, the notarized
 DMG attached, install and verification notes with its SHA-256, marked latest. Without a
 GitHub remote that step is skipped.
 
-A fork can publish under its own identity by setting `TARDY_SIGNING_IDENTITY`,
+wrangler is pinned (`TARDY_WRANGLER_VERSION`, default 4.133.0) and runs with npm install
+scripts off: it runs on the machine holding the signing identity and Sparkle key, so a new
+wrangler release is adopted deliberately, never picked up by a release run.
+
+A fork can publish under its own identity by setting `TARDY_SIGNING_IDENTITY`, `TARDY_TEAM_ID`,
 `TARDY_NOTARY_PROFILE`, `TARDY_SPARKLE_ACCOUNT`, `TARDY_BUCKET` and `TARDY_FEED_HOST`
 (and changing `SUFeedURL`/`SUPublicEDKey`).
 

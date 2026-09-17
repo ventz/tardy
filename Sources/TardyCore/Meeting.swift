@@ -19,6 +19,15 @@ public struct Meeting: Equatable, Sendable {
     }
 }
 
+/// Which calendar events become meetings. Declined and canceled invites are left out
+/// entirely: anyone can put an invite on the calendar, and one you've turned down
+/// shouldn't alert you or offer a Join button.
+public enum MeetingFilter {
+    public static func includes(isAllDay: Bool, isCanceled: Bool, declinedByMe: Bool) -> Bool {
+        !isAllDay && !isCanceled && !declinedByMe
+    }
+}
+
 public enum MeetingKind: String, Codable, Sendable {
     case personal
     case work

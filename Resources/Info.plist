@@ -36,6 +36,10 @@
 	<string>https://tardy.vpetkov.net/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>dgkckSFYZyQw6caRYoUKbvaqU8vvE7IkGzt1nPPSVVw=</string>
+	<key>SURequireSignedFeed</key>
+	<true/>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 </dict>

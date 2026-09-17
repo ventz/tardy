@@ -16,7 +16,7 @@
 #   - a notarytool keychain profile              (xcrun notarytool store-credentials)
 #   - the Sparkle EdDSA key for account "tardy"  (generate_keys --account tardy)
 #   - a logged-in gh, when origin is a GitHub repository  (gh auth login)
-#   - a logged-in wrangler                       (npx wrangler@latest login)
+#   - a logged-in wrangler                       (npx wrangler@4.133.0 login)
 #
 # Every setting below can be overridden from the environment, so a fork can
 # publish under its own identity, bucket and domain.
@@ -29,6 +29,7 @@ readonly NOTARY_PROFILE="${TARDY_NOTARY_PROFILE:-moo-notary}"
 readonly SPARKLE_ACCOUNT="${TARDY_SPARKLE_ACCOUNT:-tardy}"
 readonly BUCKET="${TARDY_BUCKET:-tardy-mac-calendar-autoupdate}"
 readonly FEED_HOST="${TARDY_FEED_HOST:-https://tardy.vpetkov.net}"
+readonly TEAM_ID="${TARDY_TEAM_ID:-8J9W3ZG4ZN}"
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$repo_root"
@@ -69,7 +70,14 @@ sparkle_bin=".build/artifacts/sparkle/Sparkle/bin"
 [[ -x "$sparkle_bin/generate_appcast" ]] \
     || { echo "generate_appcast not found under $sparkle_bin" >&2; exit 1; }
 
-wrangler() { CI=1 WRANGLER_SEND_METRICS=false npx --yes wrangler@latest "$@"; }
+# Pinned, with npm install scripts off: this runs on the machine that holds the
+# signing identity, notary profile and Sparkle key, so a newly published (possibly
+# hijacked) wrangler must never run here unreviewed. Bump the pin deliberately.
+readonly WRANGLER_VERSION="${TARDY_WRANGLER_VERSION:-4.133.0}"
+wrangler() {
+    CI=1 WRANGLER_SEND_METRICS=false npm_config_ignore_scripts=true \
+        npx --yes "wrangler@$WRANGLER_VERSION" "$@"
+}
 if [[ $dry_run -eq 0 ]]; then
     for tool in "$notarytool" "$stapler"; do
         [[ -x "$tool" ]] || { echo "not found: $tool" >&2; exit 1; }
@@ -77,7 +85,7 @@ if [[ $dry_run -eq 0 ]]; then
     "$notarytool" history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1 \
         || { echo "notarytool profile '$NOTARY_PROFILE' is missing or invalid" >&2; exit 1; }
     wrangler whoami >/dev/null 2>&1 \
-        || { echo "wrangler is not logged in -- run: npx wrangler@latest login" >&2; exit 1; }
+        || { echo "wrangler is not logged in -- run: npx wrangler@$WRANGLER_VERSION login" >&2; exit 1; }
 fi
 
 # The GitHub release tags the commit the app is built from, so a real release
@@ -89,6 +97,10 @@ if [[ $dry_run -eq 0 ]]; then
     tracked_changes=$(git status --porcelain --untracked-files=no)
     [[ -z "$tracked_changes" ]] \
         || { echo "uncommitted changes -- commit or stash them so the release matches its tag" >&2; exit 1; }
+    # SwiftPM compiles every file under Sources/, tracked or not
+    untracked_inputs=$(git status --porcelain --untracked-files=all -- Sources Resources Package.swift Package.resolved)
+    [[ -z "$untracked_inputs" ]] \
+        || { echo "untracked build inputs would ship without being in the tag:" >&2; echo "$untracked_inputs" >&2; exit 1; }
     origin_url=$(git remote get-url origin 2>/dev/null || true)
     if [[ "$origin_url" == *github.com* ]]; then
         gh auth status >/dev/null 2>&1 \
@@ -98,6 +110,49 @@ if [[ $dry_run -eq 0 ]]; then
         pushed=$(git branch -r --contains "$build_commit")
         [[ -n "$pushed" ]] \
             || { echo "$build_commit is not on origin -- push it before releasing" >&2; exit 1; }
+    fi
+fi
+
+# --- Version checks ----------------------------------------------------------
+# Against the local master feed, before spending a build: a version that isn't
+# new would overwrite a published DMG (whose signature the feed records) or ship
+# a build Sparkle never offers.
+
+plist_version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Resources/Info.plist)
+plist_build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" Resources/Info.plist)
+[[ "$plist_build" =~ ^[0-9]+$ ]] || { echo "CFBundleVersion must be an integer, got '$plist_build'" >&2; exit 1; }
+
+master_feed="$release_dir/appcast.xml"
+if [[ -f "$master_feed" ]]; then
+    newest_build=$(sed -n 's:.*<sparkle\:version>\([0-9][0-9]*\)</sparkle\:version>.*:\1:p' "$master_feed" | sort -n | tail -1)
+    if [[ -n "$newest_build" && "$plist_build" -le "$newest_build" ]]; then
+        echo "CFBundleVersion $plist_build is not above the newest published build $newest_build -- bump it" >&2
+        exit 1
+    fi
+    if grep -q "<sparkle:shortVersionString>$plist_version</sparkle:shortVersionString>" "$master_feed"; then
+        echo "version $plist_version is already in the feed -- bump CFBundleShortVersionString" >&2
+        exit 1
+    fi
+fi
+
+if [[ $dry_run -eq 0 ]]; then
+    # The published feed must be the one this machine last wrote. Anything else
+    # means the bucket was changed elsewhere, and generate_appcast would carry
+    # (and, with a signed feed, sign) whatever is in it.
+    if [[ -f "$master_feed" ]]; then
+        live_feed=$(mktemp "${TMPDIR:-/tmp}/tardy-live-appcast.XXXXXX")
+        curl -fsS "$FEED_HOST/appcast.xml" -o "$live_feed" \
+            || { command rm -f "$live_feed"; echo "could not fetch $FEED_HOST/appcast.xml" >&2; exit 1; }
+        if ! cmp -s "$live_feed" "$master_feed"; then
+            command rm -f "$live_feed"
+            echo "the live appcast differs from $master_feed -- find out why before releasing" >&2
+            exit 1
+        fi
+        command rm -f "$live_feed"
+    fi
+    if curl -fsI "$FEED_HOST/Tardy-$plist_version.dmg" >/dev/null 2>&1; then
+        echo "Tardy-$plist_version.dmg is already published -- bump the version" >&2
+        exit 1
     fi
 fi
 
@@ -125,9 +180,10 @@ while IFS= read -r f; do
     description=$(file "$f")
     [[ "$description" == *Mach-O* ]] || continue
     signature=$(codesign -dvv "$f" 2>&1 || true)
-    [[ "$signature" == *"Authority=Developer ID Application"* ]] || unsigned+="$f"$'\n'
+    [[ "$signature" == *"Authority=Developer ID Application"* && "$signature" == *"TeamIdentifier=$TEAM_ID"* ]] \
+        || unsigned+="$f"$'\n'
 done < <(find "$app" -type f -perm +111)
-[[ -z "$unsigned" ]] || { echo "not Developer ID signed:" >&2; printf '%s' "$unsigned" >&2; exit 1; }
+[[ -z "$unsigned" ]] || { echo "not Developer ID signed by team $TEAM_ID:" >&2; printf '%s' "$unsigned" >&2; exit 1; }
 
 # Notarization rejects get-task-allow; Calendar access needs its entitlement
 # under the hardened runtime or EventKit fails silently.
@@ -171,20 +227,20 @@ say "Notarizing (a few minutes at Apple)"
 spctl --assess --type open --context context:primary-signature -vv "$dmg"
 
 # --- Appcast -----------------------------------------------------------------
-# Pull the published feed first so earlier releases keep their entries.
+# Built on the local master feed (checked against the live one in preflight) so
+# earlier releases keep their entries.
 
 say "Generating appcast"
-if curl -fsS "$FEED_HOST/appcast.xml" -o "$release_dir/appcast.xml.remote" 2>/dev/null; then
-    mv "$release_dir/appcast.xml.remote" "$release_dir/appcast.xml"
-else
-    command rm -f "$release_dir/appcast.xml.remote"
-fi
-
 "$sparkle_bin/generate_appcast" \
     --account "$SPARKLE_ACCOUNT" \
     --download-url-prefix "$FEED_HOST/" \
     --maximum-versions 5 \
     "$release_dir"
+
+# The app sets SURequireSignedFeed, so an unsigned feed would strand every copy
+# of this build: it could never see another update.
+grep -q "sparkle-signatures:" "$master_feed" \
+    || { echo "generate_appcast did not sign $master_feed -- not publishing" >&2; exit 1; }
 
 # --- Publish -----------------------------------------------------------------
 

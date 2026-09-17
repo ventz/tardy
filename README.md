@@ -56,7 +56,8 @@ open Tardy.dmg
 # Drag Tardy to Applications, then launch it and allow Calendar access
 ```
 
-Requires macOS 14 (Sonoma) or later. The app is signed and notarized by Apple, and
+Requires macOS 14 (Sonoma) or later. The app is signed and notarized by Apple
+(`spctl -a -vv -t install Tardy.dmg` should name team `8J9W3ZG4ZN`), and
 every version is also on the [Releases page](https://github.com/ventz/tardy/releases).
 To build from source, see [docs/DEVELOPING.md](docs/DEVELOPING.md).
 
@@ -75,8 +76,9 @@ To build from source, see [docs/DEVELOPING.md](docs/DEVELOPING.md).
 
 ## Supported Meeting Providers
 
-Tardy finds a meeting link in an event's location, URL or notes (in that order)
-and recognizes these providers:
+Tardy finds an https meeting link in an event's location, URL or notes (in that order)
+and recognizes these providers. Only those hosts get a Join button, and invites you've
+declined or that were canceled are left out entirely:
 
 | Provider | Example link |
 |---|---|

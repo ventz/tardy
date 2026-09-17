@@ -6,7 +6,7 @@
 # Deliberately separate from scripts/release.sh: editing copy shouldn't need a
 # build, and a build shouldn't silently republish the site.
 #
-# Requires a logged-in wrangler: npx wrangler@latest login
+# Requires a logged-in wrangler: npx wrangler@4.133.0 login
 
 set -euo pipefail
 
@@ -16,11 +16,16 @@ readonly SITE_HOST="${TARDY_FEED_HOST:-https://tardy.vpetkov.net}"
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$repo_root"
 
-# CI=1 and the metrics opt-out keep wrangler off its first-run prompts
-wrangler() { CI=1 WRANGLER_SEND_METRICS=false npx --yes wrangler@latest "$@"; }
+# CI=1 and the metrics opt-out keep wrangler off its first-run prompts. Pinned,
+# with npm install scripts off, for the same reason as in release.sh.
+readonly WRANGLER_VERSION="${TARDY_WRANGLER_VERSION:-4.133.0}"
+wrangler() {
+    CI=1 WRANGLER_SEND_METRICS=false npm_config_ignore_scripts=true \
+        npx --yes "wrangler@$WRANGLER_VERSION" "$@"
+}
 
 wrangler whoami >/dev/null 2>&1 \
-    || { echo "wrangler is not logged in -- run: npx wrangler@latest login" >&2; exit 1; }
+    || { echo "wrangler is not logged in -- run: npx wrangler@$WRANGLER_VERSION login" >&2; exit 1; }
 
 # Content types are passed bare, with no charset: wrangler hangs when given one
 echo "==> Publishing site to $BUCKET"
