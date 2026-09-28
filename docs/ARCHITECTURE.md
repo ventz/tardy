@@ -144,5 +144,9 @@ A Carbon `RegisterEventHotKey` hotkey needs no Accessibility permission. Getting
   ignores and notarization rejects if unsigned; every nested Mach-O is signed individually.
 - **Never pipe command output into `grep -q` in the scripts.** Under `pipefail` the early exit
   kills the writer with SIGPIPE and fails checks at random; capture into a variable first.
+- **A background menu bar app can't activate itself** on macOS 14+: `NSApp.activate()` and
+  even `activate(ignoringOtherApps:)` are ignored, and `orderFrontRegardless` puts the window
+  under the active app's front window. `NSWindow.bringToFront()` floats the window until
+  Tardy becomes active or the user switches to another app.
 - **Offscreen renders lie** about menu bar and menu layout. Confirm visual changes in the real
   menu bar.
