@@ -15,7 +15,7 @@
 
 | Path | Role |
 |---|---|
-| `Sources/TardyCore/` | Pure logic, no AppKit: `AlertState`, `TickScheduler`, `Formatting`, `MeetingLinks`, `ClockOptions`, `HotKeyShortcut`, `SettingsSnapshot` (export format and cross-Mac calendar matching). Covered by `Tests/TardyCoreTests`. |
+| `Sources/TardyCore/` | Pure logic, no AppKit: `AlertState`, `TickScheduler`, `Formatting`, `MeetingLinks`, `ClockOptions`, `HotKeyShortcut`, `AlertSounds` (the sound alert schedule), `SettingsSnapshot` (export format and cross-Mac calendar matching). Covered by `Tests/TardyCoreTests`. |
 | `Sources/Tardy/AppController.swift` | Status item, per-meeting state machine, tick timer, menu and actions |
 | `Sources/Tardy/CalendarService.swift` | EventKit: access, calendar groups, today's meetings |
 | `Sources/Tardy/MenuRows.swift` | Menu rows: meeting rows, clock header, Join/Dismiss/LATE styles |
@@ -24,6 +24,8 @@
 | `Sources/Tardy/HotKey.swift` | Carbon global hotkey with suspend/resume |
 | `Sources/Tardy/AlertPlayer.swift` | Sounds (Sonar) and user notifications |
 | `Sources/Tardy/Updater.swift` | Sparkle |
+| `Sources/Tardy/Service.swift` | Launch at login, Run as a service (launchd agent) and the one-copy-at-a-time handover |
+| `Resources/LaunchAgent.plist` | The agent template `build-app.sh` installs in `Contents/Library/LaunchAgents` |
 | `Sources/Tardy/Settings.swift` | `SettingsStore` (observable, UserDefaults-backed) and `CalendarDirectory` |
 
 ## Alert state machine

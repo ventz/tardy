@@ -35,6 +35,17 @@ installed release. It's signed with your first "Apple Development" identity when
 an ad-hoc signature changes on every build and macOS would ask for Calendar access again
 each time.
 
+The bundle carries its launch agent in `Contents/Library/LaunchAgents/<bundle id>.agent.plist`
+(the debug build's label is `net.vpetkov.tardy.debug.agent`). Debug builds never turn Run as
+a service on by themselves; the Settings toggle does. To install a release build locally
+while the service is running, copy it over and open it: the new copy hands over with
+`launchctl kickstart -k`, which restarts the service from the new bundle.
+
+```bash
+ditto build/Tardy.app /Applications/Tardy.app && open /Applications/Tardy.app
+launchctl print gui/$(id -u)/net.vpetkov.tardy.agent | grep -E 'state|pid|runs'
+```
+
 App icon: `scripts/make-icon.sh source.png` rebuilds `Resources/AppIcon.icns` and
 `docs/images/tardy-icon.png` from a square PNG. `scripts/compose-icon.py` clips the artwork to
 Apple's exact tile (824 px, radius 185, in a 1024 px canvas): macOS 26 shrinks any icon that
@@ -120,8 +131,8 @@ build in the feed, a version already in the feed or already published as a DMG, 
 real release) a live `appcast.xml` that differs from the local master copy in
 `~/tardy-releases` -- a changed feed means the bucket was written from somewhere else.
 
-It then tests, builds, audits every signature (Developer ID, team `8J9W3ZG4ZN`) and the
-entitlements, builds and signs the DMG, notarizes and staples it, checks it with `spctl`,
+It then tests, builds, audits every signature (Developer ID, team `8J9W3ZG4ZN`), the
+entitlements and the launch agent plist, builds and signs the DMG, notarizes and staples it, checks it with `spctl`,
 regenerates and signs the appcast from the local master feed plus archives, and uploads the versioned DMG, `Tardy.dmg`
 (always the newest) and finally `appcast.xml`. The feed goes last so nothing is advertised
 before it can be downloaded.
@@ -161,5 +172,7 @@ to `/index.html`.
   inside can be fine).
 - **No events after installing:** check System Settings > Privacy & Security > Calendars, and
   that the calendars exist in the Mac Calendar app.
+- **Tardy keeps coming back after Quit:** that is Run as a service. Turn it off in
+  Settings > General, which unregisters the agent (and keeps Tardy running as a normal app).
 - **Release product path:** SwiftPM's universal build output moved between toolchains
   (`.build/apple` vs `.build/out`); the scripts ask `swift build --show-bin-path`.
