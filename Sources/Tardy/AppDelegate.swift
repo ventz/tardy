@@ -5,9 +5,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var controller: AppController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        guard Service.claimInstance() else {
+            NSApp.terminate(nil)
+            return
+        }
         let controller = AppController()
         self.controller = controller
         controller.start()
+        // A service handover (turning Run as a service on or off in Settings) restarts
+        // Tardy; reopen the window the user was in
+        if UserDefaults.standard.bool(forKey: Service.reopenSettingsKey) {
+            UserDefaults.standard.removeObject(forKey: Service.reopenSettingsKey)
+            controller.showSettings()
+        }
     }
 }
 

@@ -47,7 +47,7 @@ framework=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_
 
 say "Assembling $app"
 command rm -rf "$app"
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Frameworks"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Frameworks" "$app/Contents/Library/LaunchAgents"
 cp "$binary" "$app/Contents/MacOS/Tardy"
 ditto "$framework" "$app/Contents/Frameworks/Sparkle.framework"
 cp Resources/Info.plist "$app/Contents/Info.plist"
@@ -65,6 +65,14 @@ else
     /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Tardy Debug" "$plist"
     /usr/libexec/PlistBuddy -c "Delete :SUFeedURL" "$plist"
 fi
+
+# "Run as a service" agent, named after the bundle id (Service.label)
+bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$plist")
+agent="$app/Contents/Library/LaunchAgents/$bundle_id.agent.plist"
+cp Resources/LaunchAgent.plist "$agent"
+/usr/libexec/PlistBuddy -c "Set :Label $bundle_id.agent" "$agent"
+/usr/libexec/PlistBuddy -c "Set :AssociatedBundleIdentifiers:0 $bundle_id" "$agent"
+plutil -lint -s "$agent"
 
 say "Signing with: $identity"
 

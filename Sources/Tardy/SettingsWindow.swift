@@ -1,5 +1,4 @@
 import AppKit
-import ServiceManagement
 import SwiftUI
 import TardyCore
 import UniformTypeIdentifiers
@@ -217,7 +216,9 @@ struct SettingsView: View {
 
 private struct GeneralPane: View {
     @ObservedObject var settings: SettingsStore
-    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var launchAtLogin = Service.launchAtLogin
+    @State private var runAsService = Service.isEnabled
+    @State private var needsApproval = Service.needsApproval
     @State private var loginError: String?
 
     // The build number (CFBundleVersion) only orders releases for Sparkle; users see the version
@@ -230,18 +231,33 @@ private struct GeneralPane: View {
             Section {
                 Toggle("Launch at login", isOn: Binding(
                     get: { launchAtLogin },
-                    set: { enable in
-                        do {
-                            if enable { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
-                            loginError = nil
-                        } catch {
-                            loginError = error.localizedDescription
-                        }
-                        launchAtLogin = SMAppService.mainApp.status == .enabled
-                    }
+                    set: { enable in change { try Service.setLaunchAtLogin(enable) } }
                 ))
+                .disabled(runAsService)
+                Toggle(isOn: Binding(
+                    get: { runAsService },
+                    set: { enable in
+                        // Tardy restarts to switch between launchd's copy and a normal one
+                        UserDefaults.standard.set(true, forKey: Service.reopenSettingsKey)
+                        change { try Service.setEnabled(enable) }
+                        // Still here: no restart is coming
+                        if enable && !Service.isEnabled {
+                            UserDefaults.standard.removeObject(forKey: Service.reopenSettingsKey)
+                        }
+                    }
+                )) {
+                    Text("Run as a service")
+                    Text("Starts at login and reopens Tardy within seconds whenever it quits, even from Quit Tardy. Turn this off to quit for good.")
+                }
                 if let loginError {
                     Text(loginError).foregroundStyle(.red).font(.callout)
+                }
+                if needsApproval {
+                    HStack {
+                        Text("Tardy is turned off in Login Items.").foregroundStyle(.red).font(.callout)
+                        Spacer()
+                        Button("Open Login Items…") { Service.openLoginItemsSettings() }
+                    }
                 }
             } header: {
                 Text("Startup")
@@ -256,7 +272,24 @@ private struct GeneralPane: View {
         }
         .formStyle(.grouped)
         .navigationTitle("General")
-        .onAppear { launchAtLogin = SMAppService.mainApp.status == .enabled }
+        .onAppear(perform: refresh)
+    }
+
+    private func change(_ action: () throws -> Void) {
+        do {
+            try action()
+            loginError = nil
+        } catch {
+            UserDefaults.standard.removeObject(forKey: Service.reopenSettingsKey)
+            loginError = error.localizedDescription
+        }
+        refresh()
+    }
+
+    private func refresh() {
+        launchAtLogin = Service.launchAtLogin
+        runAsService = Service.isEnabled
+        needsApproval = Service.needsApproval
     }
 }
 

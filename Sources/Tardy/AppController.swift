@@ -1,7 +1,6 @@
 import AppKit
 import Combine
 import EventKit
-import ServiceManagement
 import TardyCore
 
 /// Owns the status item, the per-meeting alert state machine, the tick timer and
@@ -71,13 +70,14 @@ final class AppController: NSObject, NSMenuDelegate {
         render(text: "", icon: true)
 
         alerts.requestNotificationPermission()
-        registerLoginItemOnFirstLaunch()
         hotKey = HotKey { [weak self] in self?.toggleMenu() }
         applyShortcut()
         observeChanges()
 
         Task { @MainActor in
             if await calendars.requestAccess() == false { showAccessAlert() }
+            // After the permission prompt: turning the service on restarts Tardy
+            enableServiceOnFirstLaunch()
             directory.update(groups: calendars.groups(), hasAccess: calendars.hasAccess)
             refreshSoon()
         }
@@ -85,14 +85,15 @@ final class AppController: NSObject, NSMenuDelegate {
     }
 
     /// A menu bar alert app is only useful if it's running, so the first launch of an
-    /// installed build turns on Launch at Login once; the settings checkbox turns it off.
-    private func registerLoginItemOnFirstLaunch() {
-        guard updater.isEnabled, !settings.didRegisterLoginItem else { return }
-        settings.didRegisterLoginItem = true
+    /// installed build (including the first after updating from 1.0.1, which only had
+    /// Launch at Login) turns on Run as a service once; Settings > General turns it off.
+    private func enableServiceOnFirstLaunch() {
+        guard updater.isEnabled, !settings.didEnableService else { return }
+        settings.didEnableService = true
         do {
-            try SMAppService.mainApp.register()
+            try Service.setEnabled(true)
         } catch {
-            NSLog("Tardy: could not enable launch at login: \(error)")
+            NSLog("Tardy: could not turn on the service: \(error)")
         }
     }
 
@@ -515,6 +516,10 @@ final class AppController: NSObject, NSMenuDelegate {
     func setShortcutRecording(_ recording: Bool) {
         // A registered hotkey is swallowed system-wide, so the recorder couldn't see it
         if recording { hotKey?.suspend() } else { hotKey?.resume() }
+    }
+
+    func showSettings() {
+        settingsWindow.show()
     }
 
     @objc private func openSettings() {

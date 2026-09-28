@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Copied to Contents/Library/LaunchAgents/<Label>.plist by build-app.sh, which
+	     rewrites Label and AssociatedBundleIdentifiers for the debug build.
+	     Registered with SMAppService.agent when "Run as a service" is on: starts
+	     Tardy at login and relaunches it whenever it exits, Quit included. -->
+	<key>Label</key>
+	<string>net.vpetkov.tardy.agent</string>
+	<key>BundleProgram</key>
+	<string>Contents/MacOS/Tardy</string>
+	<key>AssociatedBundleIdentifiers</key>
+	<array>
+		<string>net.vpetkov.tardy</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>5</integer>
+	<key>ProcessType</key>
+	<string>Interactive</string>
+	<key>LimitLoadToSessionType</key>
+	<string>Aqua</string>
+</dict>
+</plist>

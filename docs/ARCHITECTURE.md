@@ -8,6 +8,7 @@
 - [The menu bar item](#the-menu-bar-item)
 - [The menu](#the-menu)
 - [Cmd+Shift+M](#cmdshiftm)
+- [Run as a service](#run-as-a-service)
 - [Pitfalls](#pitfalls)
 
 ## Layout
@@ -111,6 +112,26 @@ A Carbon `RegisterEventHotKey` hotkey needs no Accessibility permission. Getting
 5. **Recording a new shortcut suspends the live hotkey** for the same reason as (1): otherwise
    pressing the current combination in the recorder is swallowed. The hidden Close Menu item's
    key equivalent is kept in step with whatever shortcut is registered.
+
+## Run as a service
+
+`Service.swift` registers `Contents/Library/LaunchAgents/<bundle id>.agent.plist`
+(`SMAppService.agent`; `build-app.sh` writes it from `Resources/LaunchAgent.plist`) with
+`RunAtLoad` and `KeepAlive`, so launchd relaunches Tardy after any exit. Verified on macOS 27:
+
+- **launchd sets `XPC_SERVICE_NAME` to the label** in the copy it starts; that is how a copy
+  knows it is the managed one.
+- **One copy at a time** (`Service.claimInstance`, before anything else at launch): with the
+  service on, a copy launchd didn't start (Finder, a Sparkle relaunch) runs
+  `launchctl kickstart -k gui/<uid>/<label>` and quits (`-k` so a Sparkle relaunch replaces
+  an old version launchd restarted mid-update); launchd's copy terminates any other and
+  waits for it before registering the hotkey.
+- **Unregistering the agent kills launchd's copy** (it boots the job out). Turning the service
+  off from that copy first launches a successor (`TARDY_SUCCESSOR=1`) that waits up to 10 s
+  for it to exit, then unregisters.
+- **The login item is dropped while the service is on** (both would start a copy at login) and
+  re-registered when it is turned off.
+- Switching restarts Tardy; a defaults flag reopens Settings in the new copy.
 
 ## Pitfalls
 

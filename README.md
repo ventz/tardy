@@ -70,6 +70,7 @@ To build from source, see [docs/DEVELOPING.md](docs/DEVELOPING.md).
 - **Work and Personal calendars:** mark each calendar Work or Personal; the dot colors follow
 - **Settings window** with import and export, so a setup moves between Macs in one file
 - **Menu bar clock:** optional, with seconds, AM/PM, 24-hour time, day and date; the dropdown always shows a live clock
+- **Always running:** "Run as a service" (on by default) starts Tardy at login and reopens it within seconds if it quits or crashes
 - **Keyboard shortcut:** ⇧⌘M opens and closes the menu from anywhere; change it in Settings > Shortcuts
 - **Light on battery:** wakes only when something on screen needs to change, and refreshes when your calendars change instead of polling
 - **Automatic updates** through [Sparkle](https://sparkle-project.org)
@@ -120,7 +121,7 @@ With **Progressive sounds** on, each alert plays one more sound than the one bef
 it off to choose each count. Add up to 5 alerts, 1 to 60 minutes before.
 
 - **Click** the icon for today's meetings, Join and Dismiss, Mute Sounds and **Settings…** (⌘,).
-- **Settings** has panes for General (launch at login), Alerts (mute, sound schedule),
+- **Settings** has panes for General (launch at login, run as a service), Alerts (mute, sound schedule),
   Calendars (watch each one, Personal or Work), Clock, Shortcuts, Updates, and Import & Export.
 - **⇧⌘M** (configurable) toggles the menu. Leave it open to watch the live clock.
 

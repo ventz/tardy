@@ -14,7 +14,7 @@ final class SettingsStore: ObservableObject {
         static let clock = "clock"
         static let mute = "muteSounds"
         static let sounds = "alertSounds"
-        static let didRegisterLoginItem = "didRegisterLoginItem"
+        static let didEnableService = "didEnableService"
         static let shortcut = "menuShortcut"
         static let shortcutEnabled = "menuShortcutEnabled"
     }
@@ -52,9 +52,9 @@ final class SettingsStore: ObservableObject {
     }
 
     /// State, not a setting: never exported, never reset.
-    var didRegisterLoginItem: Bool {
-        get { defaults.bool(forKey: Key.didRegisterLoginItem) }
-        set { defaults.set(newValue, forKey: Key.didRegisterLoginItem) }
+    var didEnableService: Bool {
+        get { defaults.bool(forKey: Key.didEnableService) }
+        set { defaults.set(newValue, forKey: Key.didEnableService) }
     }
 
     init() {

@@ -19,7 +19,7 @@ defaults read net.vpetkov.tardy
 
 | Pane | Settings |
 |---|---|
-| General | Launch at login, version |
+| General | Launch at login, run as a service, version |
 | Alerts | Mute sounds and notifications; progressive sounds; up to 5 alerts, each 1–60 minutes before with 1–5 sounds and a preview |
 | Calendars | Watch each calendar from the Mac Calendar app; mark it Personal (red) or Work (blue) |
 | Clock | Menu bar clock on or off; seconds, AM/PM, 24-hour, day of week, date; live preview |
@@ -76,9 +76,14 @@ sound alerts missing from an older file take their defaults.
 | `alertSounds` | JSON data (`progressive`, `alerts` of `minutes` + `beeps`) | 10, 5, 2 min; progressive (1, 2, 3 sounds) |
 | `menuShortcut` | JSON data (Carbon key code, modifiers, label) | ⇧⌘M |
 | `menuShortcutEnabled` | bool | `true` |
-| `didRegisterLoginItem` | bool | state, not a setting: launch at login was turned on at first launch |
+| `didEnableService` | bool | state, not a setting: Run as a service was turned on at first launch |
 
-Launch at login itself is managed by macOS (`SMAppService`), not stored in defaults.
+Launch at login and Run as a service are managed by macOS (`SMAppService`), not stored in
+defaults or the export. **Run as a service** is a launchd agent (`net.vpetkov.tardy.agent`)
+that starts Tardy at login and reopens it within about 5 seconds whenever it exits, Quit Tardy
+included; turn it off to quit for good. It is on by default, including for Macs updating
+from 1.0.1. Both show up in **System Settings > General > Login Items**; if Tardy is switched
+off there, Settings says so and links to it.
 
 ## Resetting
 

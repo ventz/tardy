@@ -195,6 +195,12 @@ entitlements=$(codesign -d --entitlements - --xml "$app" 2>/dev/null || true)
 [[ "$entitlements" == *personal-information.calendars* ]] \
     || { echo "app is missing the calendars entitlement" >&2; exit 1; }
 
+# "Run as a service" registers this agent by name (Service.label); a missing or
+# misnamed plist makes the toggle fail on users' Macs
+agent="$app/Contents/Library/LaunchAgents/net.vpetkov.tardy.agent.plist"
+[[ "$(/usr/libexec/PlistBuddy -c "Print :Label" "$agent" 2>/dev/null)" == "net.vpetkov.tardy.agent" ]] \
+    || { echo "app is missing its launch agent ($agent)" >&2; exit 1; }
+
 # --- Package -----------------------------------------------------------------
 
 mkdir -p "$release_dir"
