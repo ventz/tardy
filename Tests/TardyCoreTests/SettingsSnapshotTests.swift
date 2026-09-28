@@ -12,7 +12,7 @@ import Testing
     private func snapshot(_ calendars: [CalendarRef], disabled: Set<String> = [], work: Set<String> = []) -> SettingsSnapshot {
         var clock = ClockOptions()
         clock.enabled = true
-        return SettingsSnapshot(muteSounds: true, clock: clock, calendars: calendars, disabled: disabled, work: work,
+        return SettingsSnapshot(muteSounds: true, sounds: AlertSounds(progressive: false, alerts: [.init(minutes: 7, beeps: 4)]), clock: clock, calendars: calendars, disabled: disabled, work: work,
                                 shortcut: .init(enabled: true, shortcut: .default),
                                 exportedAt: Date(timeIntervalSince1970: 1_800_000_000))
     }
@@ -52,7 +52,9 @@ import Testing
 
     @Test func filesWithoutAShortcutStillImport() throws {
         let data = Data(#"{"format": "tardy-settings", "version": 1, "exportedAt": "2026-09-16T21:40:00Z", "muteSounds": false, "clock": {}, "calendars": []}"#.utf8)
-        #expect(try SettingsSnapshot.decode(data).shortcut == nil)
+        let decoded = try SettingsSnapshot.decode(data)
+        #expect(decoded.shortcut == nil)
+        #expect(decoded.sounds == nil)
     }
 
     @Test func clockToleratesMissingKeys() throws {

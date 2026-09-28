@@ -5,7 +5,7 @@ public enum TickScheduler {
     ///
     /// 1s (aligned to the second) while a meeting is within 15 min or LATE, the menu is
     /// open, or the menu bar clock shows seconds. Otherwise sleep until the next
-    /// threshold -- T-30 time shown, T-15, a start, midnight, the next clock minute --
+    /// threshold -- T-30 time shown, T-15, a sound alert, a start, midnight, the next clock minute --
     /// capped at `Timing.maxTick`. Calendar edits, wake and timezone changes arrive as
     /// notifications and tick immediately.
     public static func nextDelay(
@@ -14,6 +14,7 @@ public enum TickScheduler {
         dismissed: Set<String>,
         menuOpen: Bool,
         clock: ClockOptions,
+        alertMinutes: [Int] = [],
         calendar: Calendar = .current
     ) -> TimeInterval {
         let t = now.timeIntervalSinceReferenceDate
@@ -27,7 +28,7 @@ public enum TickScheduler {
         for meeting in meetings where !dismissed.contains(meeting.id) {
             let until = meeting.start.timeIntervalSince(now)
             if until > -Timing.lateAutoDismiss && until <= Timing.alert { return nextSecond }
-            for offset in [Timing.showTime, Timing.alert, 0] {
+            for offset in [Timing.showTime, Timing.alert, 0] + alertMinutes.map({ TimeInterval($0 * 60) }) {
                 let wait = until - offset
                 if wait > 0 { delay = min(delay, wait + 0.05) }
             }

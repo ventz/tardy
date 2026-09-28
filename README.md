@@ -34,9 +34,9 @@ they are easy to swipe away. A meeting 15 minutes out gets the same treatment as
 one starting in 30 seconds.
 
 Tardy escalates instead. The menu bar shows today's date and a dot for your next
-meeting, adds the time as it approaches, plays a sound and posts a notification
-at 15 and 5 minutes, runs a live countdown, beeps at one minute, and flashes a
-LATE counter once the meeting has started until you join or dismiss it.
+meeting, adds the time as it approaches, sounds an alert at 10, 5 and 2 minutes with one
+more sound each time (you pick the times and counts), runs a live countdown, and flashes
+a LATE counter once the meeting has started until you join or dismiss it.
 
 > [!IMPORTANT]
 > **Tardy works with the native Mac Calendar app.** It reads events through
@@ -63,7 +63,7 @@ To build from source, see [docs/DEVELOPING.md](docs/DEVELOPING.md).
 
 ## Features
 
-- **Escalating alerts:** a sound and a notification at 15 and 5 minutes, a live countdown from 5 minutes, beeps at 1 minute, and a flashing LATE counter that auto-clears after 5 minutes
+- **Escalating alerts:** up to 5 sound alerts with notifications (default 10, 5 and 2 minutes, playing 1, 2 and 3 sounds), a live countdown from 5 minutes, and a flashing LATE counter that auto-clears after 5 minutes
 - **Live date icon:** today's weekday and date, plus a red (personal) or blue (work) dot for your next meeting
 - **One-click join:** a large Join button when a meeting with a link is close, or click any meeting in the list
 - **Meeting list:** Now / Starts in … / Later today, with each meeting's time and provider
@@ -100,18 +100,28 @@ gets every alert; clicking it opens Calendar.
 
 ## Usage
 
-| Menu bar | When | Sound | Notification |
-|---|---|---|---|
-| `[WED 16] ●` | Next meeting more than 30 min away | | |
-| `[WED 16] ● 2:30-3:00pm` | Within 30 min | | |
-| `[WED 16] 12m - Standup` | 15 min | Sonar | "Meeting in 15 minutes" |
-| `🔴 4:59 - Standup (until 3:00pm)` | 5 min, live countdown | Sonar | "Meeting in 5 minutes" |
-| `🔴 0:42 - Standup` | 1 min | 3 beeps | |
-| `⚠ LATE 1:23` (flashing) | Started | | |
+| Menu bar | When |
+|---|---|
+| `[WED 16] ●` | Next meeting more than 30 min away |
+| `[WED 16] ● 2:30-3:00pm` | Within 30 min |
+| `[WED 16] 12m - Standup` | 15 min |
+| `🔴 4:59 - Standup (until 3:00pm)` | 5 min, live countdown |
+| `⚠ LATE 1:23` (flashing) | Started |
+
+Sound alerts run on their own schedule, set in **Settings > Alerts**:
+
+| Default alert | Sounds | Notification |
+|---|---|---|
+| 10 min before | 1 Sonar | "Meeting in 10 minutes" |
+| 5 min before | 2 Sonar | "Meeting in 5 minutes" |
+| 2 min before | 3 Sonar | "Meeting in 2 minutes" |
+
+With **Progressive sounds** on, each alert plays one more sound than the one before; turn
+it off to choose each count. Add up to 5 alerts, 1 to 60 minutes before.
 
 - **Click** the icon for today's meetings, Join and Dismiss, Mute Sounds and **Settings…** (⌘,).
-- **Settings** has panes for General (mute, launch at login), Calendars (watch each one,
-  Personal or Work), Clock, Shortcuts, Updates, and Import & Export.
+- **Settings** has panes for General (launch at login), Alerts (mute, sound schedule),
+  Calendars (watch each one, Personal or Work), Clock, Shortcuts, Updates, and Import & Export.
 - **⇧⌘M** (configurable) toggles the menu. Leave it open to watch the live clock.
 
 Settings can be exported to a file and imported on another Mac; see

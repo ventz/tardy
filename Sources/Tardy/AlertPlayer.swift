@@ -30,12 +30,18 @@ final class AlertPlayer: NSObject, UNUserNotificationCenterDelegate {
         sound.play()
     }
 
-    func chime() {
-        if shouldPlay() { play() }
+    func sound(count: Int) {
+        if count > 0, shouldPlay() { playSeries(count) }
     }
 
-    func beeps(count: Int = 3, interval: TimeInterval = 0.4) {
-        guard shouldPlay() else { return }
+    /// Settings preview: ignores mute and the debounce.
+    func preview(count: Int) {
+        playSeries(count)
+    }
+
+    /// Sonar echoes for about 0.8 s, so closer spacing blurs the sounds together
+    /// and they can't be counted.
+    private func playSeries(_ count: Int, interval: TimeInterval = 0.9) {
         for i in 0..<count {
             DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * interval) { [weak self] in
                 self?.play()

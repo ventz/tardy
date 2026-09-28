@@ -18,7 +18,8 @@ final class AppController: NSObject, NSMenuDelegate {
     private lazy var settingsWindow = SettingsWindowController(
         settings: settings, directory: directory, updater: updater,
         shortcuts: ShortcutActions(tryShortcut: { [unowned self] in tryShortcut($0) },
-                                   setRecording: { [unowned self] in setShortcutRecording($0) })
+                                   setRecording: { [unowned self] in setShortcutRecording($0) }),
+        previewSound: { [unowned self] in alerts.preview(count: $0) }
     )
     private var settingsObserver: AnyCancellable?
     private var watchedCalendars: Set<String> = []
@@ -27,6 +28,8 @@ final class AppController: NSObject, NSMenuDelegate {
     // Alert state
     private var states: [String: AlertState] = [:]
     private var entered: [String: Set<AlertState>] = [:]
+    /// Sound alert minutes already played (or passed) per meeting.
+    private var soundsHandled: [String: Set<Int>] = [:]
     private var dismissed: Set<String> = []
     private var primary: Meeting?
     private var clock = ClockOptions()
@@ -139,7 +142,8 @@ final class AppController: NSObject, NSMenuDelegate {
     private func tickFired() {
         tick()
         let delay = TickScheduler.nextDelay(now: Date(), meetings: calendars.meetings, dismissed: dismissed,
-                                            menuOpen: menuOpen, clock: clock)
+                                            menuOpen: menuOpen, clock: clock,
+                                            alertMinutes: settings.sounds.alerts.map(\.minutes))
         debugLog("[tick] next in \(String(format: "%.1f", delay))s")
         scheduleTick(delay)
     }
@@ -180,6 +184,7 @@ final class AppController: NSObject, NSMenuDelegate {
             if state != .idle && entered[meeting.id, default: []].insert(state).inserted {
                 onEnter(state, meeting)
             }
+            playSoundAlert(meeting, until)
         }
 
         active.removeAll { dismissed.contains($0.id) }
@@ -201,6 +206,7 @@ final class AppController: NSObject, NSMenuDelegate {
         let current = Set(active.map(\.id))
         states = states.filter { current.contains($0.key) }
         entered = entered.filter { current.contains($0.key) }
+        soundsHandled = soundsHandled.filter { current.contains($0.key) }
     }
 
     private func resetAlerts() {
@@ -209,22 +215,20 @@ final class AppController: NSObject, NSMenuDelegate {
         hideDismiss()
         states.removeAll()
         entered.removeAll()
+        soundsHandled.removeAll()
     }
 
     private func onEnter(_ state: AlertState, _ meeting: Meeting) {
-        switch state {
-        case .alert15:
-            alerts.chime()
-            alerts.notify("Meeting in 15 minutes", meeting.title)
-        case .countdown:
-            alerts.chime()
-            alerts.notify("Meeting in 5 minutes", meeting.title)
-        case .alarm:
-            alerts.beeps()
-        case .late, .idle:
-            break
-        }
         if state != .idle { showDismiss() }
+    }
+
+    /// Sound alerts follow the user's schedule, separate from the menu bar states.
+    private func playSoundAlert(_ meeting: Meeting, _ until: TimeInterval) {
+        var handled = soundsHandled[meeting.id, default: []]
+        defer { soundsHandled[meeting.id] = handled }
+        guard let (index, alert) = settings.sounds.due(secondsUntil: until, handled: &handled) else { return }
+        alerts.sound(count: settings.sounds.beeps(at: index))
+        alerts.notify("Meeting in \(alert.minutes) minute\(alert.minutes == 1 ? "" : "s")", meeting.title)
     }
 
     // MARK: Status item
@@ -406,6 +410,7 @@ final class AppController: NSObject, NSMenuDelegate {
         dismissed.insert(id)
         states[id] = nil
         entered[id] = nil
+        soundsHandled[id] = nil
         if primary?.id == id {
             primary = nil
             clearLate()

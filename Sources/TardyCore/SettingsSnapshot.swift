@@ -44,6 +44,8 @@ public struct SettingsSnapshot: Codable, Equatable, Sendable {
     public var version: Int
     public var exportedAt: Date
     public var muteSounds: Bool
+    /// Sound alert schedule; absent in files from before it was configurable.
+    public var sounds: AlertSounds?
     public var clock: ClockOptions
     public var calendars: [CalendarSetting]
     /// Menu shortcut; absent in files from before shortcuts were configurable.
@@ -59,10 +61,11 @@ public struct SettingsSnapshot: Codable, Equatable, Sendable {
         }
     }
 
-    public init(muteSounds: Bool, clock: ClockOptions, calendars: [CalendarRef],
+    public init(muteSounds: Bool, sounds: AlertSounds? = nil, clock: ClockOptions, calendars: [CalendarRef],
                 disabled: Set<String>, work: Set<String>, shortcut: ShortcutSetting? = nil,
                 exportedAt: Date = Date()) {
         self.shortcut = shortcut
+        self.sounds = sounds
         format = Self.formatName
         version = Self.currentVersion
         self.exportedAt = exportedAt

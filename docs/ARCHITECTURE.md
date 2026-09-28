@@ -33,12 +33,17 @@ menu bar.
 ```mermaid
 stateDiagram-v2
     [*] --> Idle
-    Idle --> Alert15: T-15 min (sound, notification, Join/Dismiss)
-    Alert15 --> Countdown: T-5 min (sound, notification)
-    Countdown --> Alarm: T-1 min (3 beeps)
+    Idle --> Alert15: T-15 min (title, Join/Dismiss)
+    Alert15 --> Countdown: T-5 min (live countdown)
+    Countdown --> Alarm: T-1 min
     Alarm --> Late: T-0 (flashing LATE)
     Late --> [*]: joined, dismissed, or 5 min
 ```
+
+Sound alerts (`AlertSounds`, Settings > Alerts) are separate from these states: each
+configured alert plays its sounds and posts a notification once per meeting. When several
+alerts have already passed (launch or wake at T-3), only the most recent one plays.
+`TickScheduler` wakes for alerts beyond the 15-minute 1 s window.
 
 Entry actions fire once per meeting per state (`entered`). Joining or dismissing adds
 the meeting to `dismissed`, which is pruned whenever events are refetched.

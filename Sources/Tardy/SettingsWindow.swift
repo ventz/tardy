@@ -12,18 +12,22 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let directory: CalendarDirectory
     private let updater: Updater
     private let shortcuts: ShortcutActions
+    private let previewSound: (Int) -> Void
     private var window: NSWindow?
 
-    init(settings: SettingsStore, directory: CalendarDirectory, updater: Updater, shortcuts: ShortcutActions) {
+    init(settings: SettingsStore, directory: CalendarDirectory, updater: Updater, shortcuts: ShortcutActions,
+         previewSound: @escaping (Int) -> Void) {
         self.settings = settings
         self.directory = directory
         self.updater = updater
         self.shortcuts = shortcuts
+        self.previewSound = previewSound
     }
 
     func show() {
         if window == nil {
             let view = SettingsView(settings: settings, directory: directory, updater: updater, shortcuts: shortcuts,
+                                    previewSound: previewSound,
                                     actions: SettingsActions(export: { [weak self] in self?.exportSettings() },
                                                              importFile: { [weak self] in self?.importSettings() },
                                                              reset: { [weak self] in self?.resetSettings() }))
@@ -36,6 +40,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             // Window scene provides); without one the detail header sits offset
             window.toolbar = NSToolbar(identifier: "TardySettings")
             window.toolbarStyle = .unified
+            // The opaque toolbar band stopped a few points short of the sidebar
+            // divider and drew a separator the sidebar lacked; let the panes show through
+            window.titlebarSeparatorStyle = .none
+            window.titlebarAppearsTransparent = true
             window.contentViewController = NSHostingController(rootView: view)
             window.setContentSize(NSSize(width: 760, height: 520))
             window.contentMinSize = NSSize(width: 680, height: 440)
@@ -79,7 +87,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
                     ? " The menu shortcut becomes \(imported.shortcut.display)."
                     : " The menu shortcut will be turned off."
             }
-            confirm.informativeText = "Mute, clock and all \(snapshot.calendars.count) calendar settings will be replaced with the ones in “\(url.lastPathComponent)”." + shortcutNote
+            confirm.informativeText = "Sounds, clock and all \(snapshot.calendars.count) calendar settings will be replaced with the ones in “\(url.lastPathComponent)”." + shortcutNote
             confirm.addButton(withTitle: "Import")
             confirm.addButton(withTitle: "Cancel")
             confirm.beginSheetModal(for: window) { [weak self] response in
@@ -98,7 +106,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         guard let window else { return }
         let confirm = NSAlert()
         confirm.messageText = "Reset all settings?"
-        confirm.informativeText = "Every calendar is watched and Personal again, the menu bar clock is turned off and sounds are unmuted."
+        confirm.informativeText = "Every calendar is watched and Personal again, the menu bar clock is turned off and sounds are unmuted and progressive."
         confirm.alertStyle = .warning
         confirm.addButton(withTitle: "Reset")
         confirm.addButton(withTitle: "Cancel")
@@ -143,13 +151,14 @@ struct SettingsActions {
 // MARK: - Views
 
 private enum SettingsPane: String, CaseIterable, Identifiable {
-    case general, calendars, clock, shortcuts, updates, data
+    case general, alerts, calendars, clock, shortcuts, updates, data
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .general: "General"
+        case .alerts: "Alerts"
         case .calendars: "Calendars"
         case .clock: "Clock"
         case .shortcuts: "Shortcuts"
@@ -161,6 +170,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .general: "gearshape"
+        case .alerts: "bell"
         case .calendars: "calendar"
         case .clock: "clock"
         case .shortcuts: "command"
@@ -175,6 +185,7 @@ struct SettingsView: View {
     @ObservedObject var directory: CalendarDirectory
     let updater: Updater
     let shortcuts: ShortcutActions
+    let previewSound: (Int) -> Void
     let actions: SettingsActions
 
     @State private var pane: SettingsPane? = .general
@@ -184,11 +195,15 @@ struct SettingsView: View {
             List(SettingsPane.allCases, selection: $pane) { pane in
                 Label(pane.title, systemImage: pane.systemImage).tag(pane)
             }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 190)
+            // The column width alone is ignored in an NSHostingController (the sidebar
+            // stayed ~145 pt and cut "Import & Export"); the frame enforces it
+            .frame(minWidth: 200)
+            .navigationSplitViewColumnWidth(min: 200, ideal: 200, max: 260)
             .toolbar(removing: .sidebarToggle)
         } detail: {
             switch pane ?? .general {
             case .general: GeneralPane(settings: settings)
+            case .alerts: AlertsPane(settings: settings, preview: previewSound)
             case .calendars: CalendarsPane(settings: settings, directory: directory)
             case .clock: ClockPane(settings: settings)
             case .shortcuts: ShortcutsPane(settings: settings, actions: shortcuts)
@@ -212,15 +227,6 @@ private struct GeneralPane: View {
 
     var body: some View {
         Form {
-            Section {
-                Toggle("Mute sounds and notifications", isOn: $settings.muteSounds)
-            } header: {
-                Text("Alerts")
-            } footer: {
-                Text("The menu bar still counts down and flashes LATE while muted.")
-                    .foregroundStyle(.secondary)
-            }
-
             Section {
                 Toggle("Launch at login", isOn: Binding(
                     get: { launchAtLogin },
@@ -338,6 +344,166 @@ private struct CalendarRow: View {
             .labelsHidden()
             .frame(width: 160)
             .disabled(!watched.wrappedValue)
+        }
+    }
+}
+
+private struct AlertsPane: View {
+    @ObservedObject var settings: SettingsStore
+    let preview: (Int) -> Void
+
+    private var alerts: [SoundAlert] { settings.sounds.alerts }
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Mute sounds and notifications", isOn: $settings.muteSounds)
+            } footer: {
+                Text("The menu bar still counts down and flashes LATE while muted.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle(isOn: $settings.sounds.progressive) {
+                    Text("Progressive sounds")
+                    Text("Each alert plays one more sound than the one before, so you can tell them apart by ear.")
+                }
+                ForEach(alerts.indices, id: \.self) { index in
+                    AlertRow(number: index + 1, minutes: minutesBinding(index), beeps: beepsBinding(index),
+                             progressive: settings.sounds.progressive,
+                             canRemove: alerts.count > 1,
+                             remove: { remove(index) },
+                             preview: { preview(settings.sounds.beeps(at: index)) })
+                }
+                if let next = settings.sounds.proposedAlert() {
+                    Button {
+                        settings.sounds.setAlerts(alerts + [next])
+                    } label: {
+                        Label("Add Alert", systemImage: "plus")
+                    }
+                }
+            } header: {
+                Text("Before each meeting")
+            } footer: {
+                Text("Each alert plays its sounds and posts a notification. Up to \(AlertSounds.maxAlerts) alerts, 1 to 60 minutes before.")
+                    .foregroundStyle(.secondary)
+            }
+            .disabled(settings.muteSounds)
+        }
+        .formStyle(.grouped)
+        .navigationTitle("Alerts")
+    }
+
+    /// A minute already used by another alert is refused rather than merged away.
+    private func minutesBinding(_ index: Int) -> Binding<Int> {
+        Binding(
+            get: { alerts.indices.contains(index) ? alerts[index].minutes : 1 },
+            set: { new in
+                guard alerts.indices.contains(index), !alerts.contains(where: { $0.minutes == new }) else { return }
+                var updated = alerts
+                updated[index].minutes = new
+                settings.sounds.setAlerts(updated)
+            }
+        )
+    }
+
+    private func beepsBinding(_ index: Int) -> Binding<Int> {
+        Binding(
+            get: { alerts.indices.contains(index) ? settings.sounds.beeps(at: index) : 1 },
+            set: { new in
+                guard alerts.indices.contains(index) else { return }
+                var updated = alerts
+                updated[index].beeps = new
+                settings.sounds.setAlerts(updated)
+            }
+        )
+    }
+
+    private func remove(_ index: Int) {
+        var updated = alerts
+        updated.remove(at: index)
+        settings.sounds.setAlerts(updated)
+    }
+}
+
+/// One alert: when, how many sounds (a row of bells), preview and remove.
+private struct AlertRow: View {
+    let number: Int
+    @Binding var minutes: Int
+    @Binding var beeps: Int
+    let progressive: Bool
+    let canRemove: Bool
+    let remove: () -> Void
+    let preview: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 4) {
+                TextField("Minutes", value: $minutes, format: .number)
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 40)
+                    .accessibilityLabel("Alert \(number), minutes before the meeting")
+                Stepper("Minutes", value: $minutes, in: AlertSounds.minuteRange)
+                    .labelsHidden()
+                    .accessibilityLabel("Alert \(number), minutes before the meeting")
+                Text(minutes == 1 ? "minute before" : "minutes before")
+            }
+
+            Spacer()
+
+            BellCount(count: $beeps, editable: !progressive, alertNumber: number)
+
+            Button(action: preview) {
+                Image(systemName: "play.fill")
+            }
+            .buttonStyle(.borderless)
+            .help("Play these sounds")
+            .accessibilityLabel("Play alert \(number)")
+
+            Button(action: remove) {
+                Image(systemName: "minus.circle")
+            }
+            .buttonStyle(.borderless)
+            .disabled(!canRemove)
+            .help("Remove this alert")
+            .accessibilityLabel("Remove alert \(number)")
+        }
+    }
+}
+
+/// Filled bells up to `count`; click a bell to set the count.
+private struct BellCount: View {
+    @Binding var count: Int
+    let editable: Bool
+    let alertNumber: Int
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(AlertSounds.beepRange, id: \.self) { n in
+                Button {
+                    count = n
+                } label: {
+                    Image(systemName: n <= count ? "bell.fill" : "bell")
+                        .foregroundStyle(n <= count ? Color.accentColor : Color.secondary.opacity(0.5))
+                }
+                .buttonStyle(.borderless)
+                .disabled(!editable)
+            }
+        }
+        .help(editable ? "Click a bell to set how many sounds play"
+                       : "Progressive sounds sets this; turn it off to choose")
+        .accessibilityElement()
+        .accessibilityLabel("Alert \(alertNumber) sounds")
+        .accessibilityValue("\(count)")
+        .accessibilityAdjustableAction { direction in
+            guard editable else { return }
+            switch direction {
+            case .increment: count = min(count + 1, AlertSounds.beepRange.upperBound)
+            case .decrement: count = max(count - 1, AlertSounds.beepRange.lowerBound)
+            @unknown default: break
+            }
         }
     }
 }
@@ -543,7 +709,7 @@ private struct DataPane: View {
             } header: {
                 Text("Import & Export")
             } footer: {
-                Text("The file holds mute, clock, and each calendar's watched and Personal/Work settings. Calendars are matched by account and name on another Mac.")
+                Text("The file holds sound, clock, and each calendar's watched and Personal/Work settings. Calendars are matched by account and name on another Mac.")
                     .foregroundStyle(.secondary)
             }
 

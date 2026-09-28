@@ -4,9 +4,9 @@ import Foundation
 /// meeting that drives the menu bar.
 public enum AlertState: Int, Comparable, Sendable {
     case idle = 1
-    case alert15      // T-15: sound, notification, Join/Dismiss
-    case countdown    // T-5: sound, notification, live countdown
-    case alarm        // T-1: three beeps
+    case alert15      // T-15: Join/Dismiss
+    case countdown    // T-5: live countdown
+    case alarm        // T-1
     case late         // T-0: flashing LATE counter
 
     public static func < (lhs: AlertState, rhs: AlertState) -> Bool { lhs.rawValue < rhs.rawValue }

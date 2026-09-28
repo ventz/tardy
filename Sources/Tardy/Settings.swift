@@ -13,6 +13,7 @@ final class SettingsStore: ObservableObject {
         static let workCalendars = "workCalendarIDs"
         static let clock = "clock"
         static let mute = "muteSounds"
+        static let sounds = "alertSounds"
         static let didRegisterLoginItem = "didRegisterLoginItem"
         static let shortcut = "menuShortcut"
         static let shortcutEnabled = "menuShortcutEnabled"
@@ -36,6 +37,11 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(muteSounds, forKey: Key.mute) }
     }
 
+    /// When sound alerts play and how many sounds each.
+    @Published var sounds: AlertSounds {
+        didSet { defaults.set(try? JSONEncoder().encode(sounds), forKey: Key.sounds) }
+    }
+
     /// The global shortcut that opens and closes the menu.
     @Published var shortcut: HotKeyShortcut {
         didSet { defaults.set(try? JSONEncoder().encode(shortcut), forKey: Key.shortcut) }
@@ -57,6 +63,8 @@ final class SettingsStore: ObservableObject {
         clock = defaults.data(forKey: Key.clock).flatMap { try? JSONDecoder().decode(ClockOptions.self, from: $0) }
             ?? ClockOptions()
         muteSounds = defaults.bool(forKey: Key.mute)
+        sounds = defaults.data(forKey: Key.sounds).flatMap { try? JSONDecoder().decode(AlertSounds.self, from: $0) }
+            ?? AlertSounds()
         shortcut = defaults.data(forKey: Key.shortcut).flatMap { try? JSONDecoder().decode(HotKeyShortcut.self, from: $0) }
             ?? .default
         shortcutEnabled = defaults.object(forKey: Key.shortcutEnabled) as? Bool ?? true
@@ -67,7 +75,7 @@ final class SettingsStore: ObservableObject {
     }
 
     func snapshot(calendars: [CalendarRef]) -> SettingsSnapshot {
-        SettingsSnapshot(muteSounds: muteSounds, clock: clock, calendars: calendars,
+        SettingsSnapshot(muteSounds: muteSounds, sounds: sounds, clock: clock, calendars: calendars,
                          disabled: disabledCalendarIDs, work: workCalendarIDs,
                          shortcut: .init(enabled: shortcutEnabled, shortcut: shortcut))
     }
@@ -76,6 +84,7 @@ final class SettingsStore: ObservableObject {
     func apply(_ snapshot: SettingsSnapshot, calendars: [CalendarRef]) -> [String] {
         let resolved = snapshot.resolve(against: calendars)
         muteSounds = snapshot.muteSounds
+        sounds = snapshot.sounds ?? AlertSounds()
         clock = snapshot.clock
         disabledCalendarIDs = resolved.disabled
         workCalendarIDs = resolved.work
@@ -88,6 +97,7 @@ final class SettingsStore: ObservableObject {
 
     func resetToDefaults() {
         muteSounds = false
+        sounds = AlertSounds()
         clock = ClockOptions()
         disabledCalendarIDs = []
         workCalendarIDs = []
