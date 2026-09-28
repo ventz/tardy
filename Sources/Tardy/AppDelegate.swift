@@ -19,6 +19,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             controller.showSettings()
         }
     }
+
+    /// Opening Tardy while the service copy runs only reopens that copy -- including
+    /// Sparkle's relaunch after an update and a local install (`ditto` + `open`).
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        Service.restartIfUpdated()
+        return true
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        Service.restartIfUpdated()
+    }
 }
 
 func debugLog(_ message: @autoclosure () -> String) {

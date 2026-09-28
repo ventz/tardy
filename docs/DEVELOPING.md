@@ -38,8 +38,8 @@ each time.
 The bundle carries its launch agent in `Contents/Library/LaunchAgents/<bundle id>.agent.plist`
 (the debug build's label is `net.vpetkov.tardy.debug.agent`). Debug builds never turn Run as
 a service on by themselves; the Settings toggle does. To install a release build locally
-while the service is running, copy it over and open it: the new copy hands over with
-`launchctl kickstart -k`, which restarts the service from the new bundle.
+while the service is running, copy it over and open it. Opening only reopens the running
+copy, which sees a different build on disk and quits; launchd starts the new one.
 
 ```bash
 ditto build/Tardy.app /Applications/Tardy.app && open /Applications/Tardy.app

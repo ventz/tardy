@@ -85,6 +85,21 @@ enum Service {
         }
     }
 
+    /// A service copy whose app was replaced on disk quits so launchd starts the new
+    /// version. When Sparkle quits Tardy to install, launchd relaunches at once --
+    /// possibly the old version, before the new one is in place -- and Sparkle's own
+    /// relaunch then only reopens that copy.
+    static func restartIfUpdated() {
+        guard isManagedByLaunchd else { return } // otherwise nothing would start it again
+        let running = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+        let plist = Bundle.main.bundleURL.appendingPathComponent("Contents/Info.plist")
+        guard let onDisk = NSDictionary(contentsOf: plist)?["CFBundleVersion"] as? String,
+              onDisk != running else { return }
+        NSLog("Tardy: build \(onDisk) is installed, restarting from build \(running ?? "?")")
+        // Let a reopen request get its reply first, or `open` reports an error
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { NSApp.terminate(nil) }
+    }
+
     /// With the service on, a copy launchd didn't start asks launchd to start its
     /// own and quits. Returns true when it did. `-k` restarts a copy that is already
     /// running: after a Sparkle update launchd may have relaunched the old version

@@ -133,6 +133,11 @@ A Carbon `RegisterEventHotKey` hotkey needs no Accessibility permission. Getting
   for it to exit, then unregisters.
 - **The login item is dropped while the service is on** (both would start a copy at login) and
   re-registered when it is turned off.
+- **Updates:** when Sparkle quits Tardy to install, launchd relaunches at once, possibly the
+  old version, and Sparkle's relaunch then only reopens that copy. `Service.restartIfUpdated`
+  (on reopen, activation and the 10-minute safety refresh) quits a service copy whose
+  bundle on disk has a different `CFBundleVersion`, so launchd starts the new one. Verified
+  by rebuilding the debug app under a running service copy and opening it.
 - Switching restarts Tardy; a defaults flag reopens Settings in the new copy.
 
 ## Pitfalls

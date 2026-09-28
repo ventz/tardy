@@ -159,6 +159,7 @@ final class AppController: NSObject, NSMenuDelegate {
         if menuOpen { updateClockHeader() }
 
         if now.timeIntervalSince(calendars.lastFetch) >= Timing.safetyRefresh {
+            Service.restartIfUpdated()
             calendars.refresh(disabled: settings.disabledCalendarIDs, now: now)
             rebuildMeetings()
             directory.update(groups: calendars.groups(), hasAccess: calendars.hasAccess)
