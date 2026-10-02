@@ -20,7 +20,7 @@ defaults read net.vpetkov.tardy
 | Pane | Settings |
 |---|---|
 | General | Launch at login, run as a service, version |
-| Alerts | Mute sounds and notifications; progressive sounds; up to 5 alerts, each 1–60 minutes before with 1–5 sounds and a preview |
+| Alerts | Mute sounds and notifications; progressive sounds; skip sounds for meetings without a meeting link; up to 5 alerts, each 1–60 minutes before with 1–5 sounds and a preview |
 | Calendars | Watch each calendar from the Mac Calendar app; mark it Personal (red) or Work (blue) |
 | Clock | Menu bar clock on or off; seconds, AM/PM, 24-hour, day of week, date; live preview |
 | Shortcuts | Record the global open/close shortcut (default ⇧⌘M) or turn it off; lists the in-menu shortcuts |
@@ -51,7 +51,7 @@ The menu's own clock always shows seconds.
   "exportedAt" : "2026-09-16T21:40:00Z",
   "format" : "tardy-settings",
   "muteSounds" : false,
-  "sounds" : { "alerts" : [ { "beeps" : 1, "minutes" : 10 }, { "beeps" : 2, "minutes" : 5 }, { "beeps" : 3, "minutes" : 2 } ], "progressive" : true },
+  "sounds" : { "alerts" : [ { "beeps" : 1, "minutes" : 10 }, { "beeps" : 2, "minutes" : 5 }, { "beeps" : 3, "minutes" : 2 } ], "progressive" : true, "skipWithoutLink" : false },
   "version" : 1
 }
 ```
@@ -73,7 +73,7 @@ sound alerts missing from an older file take their defaults.
 | `workCalendarIDs` | array of calendar IDs | empty (every calendar Personal) |
 | `clock` | JSON data | menu bar clock off |
 | `muteSounds` | bool | `false` |
-| `alertSounds` | JSON data (`progressive`, `alerts` of `minutes` + `beeps`) | 10, 5, 2 min; progressive (1, 2, 3 sounds) |
+| `alertSounds` | JSON data (`progressive`, `skipWithoutLink`, `alerts` of `minutes` + `beeps`) | 10, 5, 2 min; progressive (1, 2, 3 sounds); sounds for every meeting |
 | `menuShortcut` | JSON data (Carbon key code, modifiers, label) | ⇧⌘M |
 | `menuShortcutEnabled` | bool | `true` |
 | `didEnableService` | bool | state, not a setting: Run as a service was turned on at first launch |

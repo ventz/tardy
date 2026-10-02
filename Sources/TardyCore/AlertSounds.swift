@@ -22,6 +22,8 @@ public struct AlertSounds: Codable, Equatable, Sendable {
     public static let maxAlerts = 5
 
     public var progressive = true
+    /// Meetings without a Join link (in person, phone) post the notification silently.
+    public var skipWithoutLink = false
     public private(set) var alerts: [SoundAlert] = [
         SoundAlert(minutes: 10, beeps: 1),
         SoundAlert(minutes: 5, beeps: 2),
@@ -30,14 +32,20 @@ public struct AlertSounds: Codable, Equatable, Sendable {
 
     public init() {}
 
-    public init(progressive: Bool, alerts: [SoundAlert]) {
+    public init(progressive: Bool, alerts: [SoundAlert], skipWithoutLink: Bool = false) {
         self.progressive = progressive
+        self.skipWithoutLink = skipWithoutLink
         self.alerts = Self.normalized(alerts)
     }
 
     /// Sounds for the alert at `index` (in `alerts` order).
     public func beeps(at index: Int) -> Int {
         progressive ? min(index + 1, Self.beepRange.upperBound) : alerts[index].beeps
+    }
+
+    /// Whether alerts for `meeting` play sounds; the notification posts either way.
+    public func playsSounds(for meeting: Meeting) -> Bool {
+        !skipWithoutLink || meeting.link != nil
     }
 
     public mutating func setAlerts(_ new: [SoundAlert]) {
@@ -82,13 +90,14 @@ public struct AlertSounds: Codable, Equatable, Sendable {
         return latest
     }
 
-    private enum CodingKeys: String, CodingKey { case progressive, alerts }
+    private enum CodingKeys: String, CodingKey { case progressive, alerts, skipWithoutLink }
 
     /// Missing keys take their defaults; values from a file are clamped.
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let d = AlertSounds()
         progressive = try c.decodeIfPresent(Bool.self, forKey: .progressive) ?? d.progressive
+        skipWithoutLink = try c.decodeIfPresent(Bool.self, forKey: .skipWithoutLink) ?? d.skipWithoutLink
         alerts = Self.normalized(try c.decodeIfPresent([SoundAlert].self, forKey: .alerts) ?? d.alerts)
     }
 }

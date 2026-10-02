@@ -118,12 +118,14 @@ Sound alerts run on their own schedule, set in **Settings > Alerts**:
 | 2 min before | 3 Sonar | "Meeting in 2 minutes" |
 
 With **Progressive sounds** on, each alert plays one more sound than the one before; turn
-it off to choose each count. Add up to 5 alerts, 1 to 60 minutes before.
+it off to choose each count. Add up to 5 alerts, 1 to 60 minutes before. **Skip sounds for
+meetings without a meeting link** (off by default) keeps in-person and phone meetings quiet:
+their notifications still appear, and the menu bar still counts down.
 
 - **Click** the icon for today's meetings, Join and Dismiss, Mute Sounds and **Settings…** (⌘,).
   With Run as a service on, **Quit Tardy** reopens it a few seconds later; turn the service off
   in Settings > General to quit for good.
-- **Settings** has panes for General (launch at login, run as a service), Alerts (mute, sound schedule),
+- **Settings** has panes for General (launch at login, run as a service), Alerts (mute, sound schedule, skip meetings without a link),
   Calendars (watch each one, Personal or Work), Clock, Shortcuts, Updates, and Import & Export.
 - **⇧⌘M** (configurable) toggles the menu. Leave it open to watch the live clock.
 

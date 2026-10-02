@@ -229,7 +229,9 @@ final class AppController: NSObject, NSMenuDelegate {
         var handled = soundsHandled[meeting.id, default: []]
         defer { soundsHandled[meeting.id] = handled }
         guard let (index, alert) = settings.sounds.due(secondsUntil: until, handled: &handled) else { return }
-        alerts.sound(count: settings.sounds.beeps(at: index))
+        if settings.sounds.playsSounds(for: meeting) {
+            alerts.sound(count: settings.sounds.beeps(at: index))
+        }
         alerts.notify("Meeting in \(alert.minutes) minute\(alert.minutes == 1 ? "" : "s")", meeting.title)
     }
 

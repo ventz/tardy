@@ -63,6 +63,27 @@ import Testing
         #expect(decoded.alerts == [.init(minutes: 1, beeps: 5)])
     }
 
+    @Test func skipsSoundsOnlyForMeetingsWithoutALinkWhenAsked() throws {
+        let link = try #require(MeetingLinks.extract(location: "https://zoom.us/j/123456789", url: nil, notes: nil))
+        func meeting(_ link: MeetingLink?) -> Meeting {
+            Meeting(id: "m", title: "t", start: .distantFuture, end: .distantFuture, calendarID: "c", link: link)
+        }
+        var sounds = AlertSounds()
+        #expect(!sounds.skipWithoutLink)
+        #expect(sounds.playsSounds(for: meeting(nil)))
+        sounds.skipWithoutLink = true
+        #expect(!sounds.playsSounds(for: meeting(nil)))
+        #expect(sounds.playsSounds(for: meeting(link)))
+    }
+
+    @Test func skipWithoutLinkRoundTripsAndDefaultsOffInOlderFiles() throws {
+        let sounds = AlertSounds(progressive: true, alerts: [.init(minutes: 5, beeps: 1)], skipWithoutLink: true)
+        let decoded = try JSONDecoder().decode(AlertSounds.self, from: JSONEncoder().encode(sounds))
+        #expect(decoded == sounds)
+        let older = try JSONDecoder().decode(AlertSounds.self, from: Data(#"{"progressive": false}"#.utf8))
+        #expect(!older.skipWithoutLink)
+    }
+
     @Test func schedulerWakesForAnAlertBeyondFifteenMinutes() {
         let now = Date(timeIntervalSinceReferenceDate: 1_000_000)
         let meeting = Meeting(id: "m", title: "Standup", start: now.addingTimeInterval(45 * 60),

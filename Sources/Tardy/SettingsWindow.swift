@@ -401,6 +401,10 @@ private struct AlertsPane: View {
                     Text("Progressive sounds")
                     Text("Each alert plays one more sound than the one before, so you can tell them apart by ear.")
                 }
+                Toggle(isOn: $settings.sounds.skipWithoutLink) {
+                    Text("Skip sounds for meetings without a meeting link")
+                    Text("In-person and phone meetings still get the notification, just silently.")
+                }
                 ForEach(alerts.indices, id: \.self) { index in
                     AlertRow(number: index + 1, minutes: minutesBinding(index), beeps: beepsBinding(index),
                              progressive: settings.sounds.progressive,

@@ -46,6 +46,8 @@ stateDiagram-v2
 Sound alerts (`AlertSounds`, Settings > Alerts) are separate from these states: each
 configured alert plays its sounds and posts a notification once per meeting. When several
 alerts have already passed (launch or wake at T-3), only the most recent one plays.
+With `skipWithoutLink` on, a meeting with no recognized Join link (`Meeting.link == nil`)
+still gets the notification but no sounds.
 `TickScheduler` wakes for alerts beyond the 15-minute 1 s window.
 
 Entry actions fire once per meeting per state (`entered`). Joining or dismissing adds
