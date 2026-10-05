@@ -194,6 +194,9 @@ entitlements=$(codesign -d --entitlements - --xml "$app" 2>/dev/null || true)
 [[ "$entitlements" != *get-task-allow* ]] || { echo "app carries get-task-allow" >&2; exit 1; }
 [[ "$entitlements" == *personal-information.calendars* ]] \
     || { echo "app is missing the calendars entitlement" >&2; exit 1; }
+helper_entitlements=$(codesign -d --entitlements - --xml "$app/Contents/Helpers/tardy-events" 2>/dev/null || true)
+[[ "$helper_entitlements" == *personal-information.calendars* ]] \
+    || { echo "Contents/Helpers/tardy-events is missing the calendars entitlement" >&2; exit 1; }
 
 # "Run as a service" registers this agent by name (Service.label); a missing or
 # misnamed plist makes the toggle fail on users' Macs

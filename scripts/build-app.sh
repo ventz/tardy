@@ -24,14 +24,14 @@ if [[ $release -eq 1 ]]; then
     say "Building release (universal)"
     swift build -c release --arch arm64 --arch x86_64
     # The product path differs across toolchains (.build/apple vs .build/out); ask SwiftPM
-    binary="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/Tardy"
+    bin_path="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
     app="build/Tardy.app"
     identity="$RELEASE_IDENTITY"
     timestamp="--timestamp"
 else
     say "Building debug"
     swift build
-    binary="$(swift build --show-bin-path)/Tardy"
+    bin_path="$(swift build --show-bin-path)"
     app="build/Tardy Debug.app"
     # A stable development identity keeps the Calendar permission across rebuilds;
     # ad-hoc signatures change every build and macOS asks again each time.
@@ -41,14 +41,19 @@ else
     timestamp="--timestamp=none"
 fi
 
+binary="$bin_path/Tardy"
+helper="$bin_path/tardy-events"
 [[ -x "$binary" ]] || { echo "build produced no binary at $binary" >&2; exit 1; }
+[[ -x "$helper" ]] || { echo "build produced no helper at $helper" >&2; exit 1; }
 framework=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
 [[ -d "$framework" ]] || { echo "Sparkle.framework not found at $framework (run: swift package resolve)" >&2; exit 1; }
 
 say "Assembling $app"
 command rm -rf "$app"
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Frameworks" "$app/Contents/Library/LaunchAgents"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Helpers" "$app/Contents/Resources" "$app/Contents/Frameworks" "$app/Contents/Library/LaunchAgents"
 cp "$binary" "$app/Contents/MacOS/Tardy"
+# Read by the Claude Code mod in claude-code/
+cp "$helper" "$app/Contents/Helpers/tardy-events"
 ditto "$framework" "$app/Contents/Frameworks/Sparkle.framework"
 cp Resources/Info.plist "$app/Contents/Info.plist"
 [[ -f Resources/AppIcon.icns ]] && cp Resources/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
@@ -100,6 +105,8 @@ for v in "$app/Contents/Frameworks/"*.framework/Versions/[A-Z]; do
     [[ -d "$v" ]] && sign "$v"
 done
 
+# Its own identifier; the same calendars entitlement, which the hardened runtime requires
+sign --identifier net.vpetkov.tardy.events --entitlements Resources/Tardy.entitlements "$app/Contents/Helpers/tardy-events"
 sign --entitlements Resources/Tardy.entitlements "$app"
 codesign --verify --deep --strict "$app"
 

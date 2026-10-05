@@ -23,6 +23,7 @@ Mac Calendar app and escalates as a meeting gets closer, from a quiet dot to a f
 - [Features](#features)
 - [Supported Meeting Providers](#supported-meeting-providers)
 - [Usage](#usage)
+- [Claude Code](#claude-code)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
@@ -132,11 +133,30 @@ their notifications still appear, and the menu bar still counts down.
 Settings can be exported to a file and imported on another Mac; see
 [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
+## Claude Code
+
+If you spend the day in [Claude Code](https://code.claude.com), Tardy can also put your next
+meeting right above the prompt: the same escalation as the menu bar, a live countdown, a
+flashing LATE counter, and one-key Join and Dismiss. It's an optional mod, and it reads the
+calendars Tardy watches through a helper bundled in Tardy.app, so there's nothing to build:
+
+```bash
+claude plugin marketplace add ventz/tardy
+claude plugin install tardy@tardy
+```
+
+```
+● 12m - Standup  [Join Zoom] [Dismiss]
+```
+
+`/tardy` lists the rest of today. Details in [claude-code/README.md](claude-code/README.md).
+
 ## Documentation
 
 - [docs/CONFIGURATION.md](docs/CONFIGURATION.md): every setting and its `defaults` key
 - [docs/DEVELOPING.md](docs/DEVELOPING.md): building, signing, notarizing, releasing and updates
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how alerts, scheduling and the menu work, and the macOS pitfalls behind them
+- [claude-code/README.md](claude-code/README.md): the Claude Code mod and its calendar helper
 
 ## Contributing
 

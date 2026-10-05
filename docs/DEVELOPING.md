@@ -46,6 +46,12 @@ ditto build/Tardy.app /Applications/Tardy.app && open /Applications/Tardy.app
 launchctl print gui/$(id -u)/net.vpetkov.tardy.agent | grep -E 'state|pid|runs'
 ```
 
+The bundle also carries `Contents/Helpers/tardy-events`, the calendar helper the Claude Code
+mod reads (see [claude-code/README.md](../claude-code/README.md)). It's signed with its own
+identifier, `net.vpetkov.tardy.events`, and the same calendars entitlement as the app, which
+the hardened runtime requires; `release.sh` checks both. To try it on its own:
+`"build/Tardy Debug.app/Contents/Helpers/tardy-events"` prints today's meetings as JSON.
+
 App icon: `scripts/make-icon.sh source.png` rebuilds `Resources/AppIcon.icns` and
 `docs/images/tardy-icon.png` from a square PNG. `scripts/compose-icon.py` clips the artwork to
 Apple's exact tile (824 px, radius 185, in a 1024 px canvas): macOS 26 shrinks any icon that

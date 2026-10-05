@@ -24,3 +24,6 @@ sessions/
 *.session
 .DS_Store
 .swiftpm/
+
+# Claude Code writes these when it loads the mod
+claude-code/.claude-plugin/types/

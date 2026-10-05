@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>net.vpetkov.tardy.events</string>
+    <key>CFBundleName</key>
+    <string>tardy-events</string>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>Shows your next meeting above the Claude Code prompt.</string>
+</dict>
+</plist>

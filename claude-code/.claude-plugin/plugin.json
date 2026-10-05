@@ -1,0 +1,10 @@
+{
+  "name": "tardy",
+  "version": "0.1.0",
+  "description": "Tardy's escalating meeting countdown as a band above the Claude Code prompt: next meeting, live countdown, flashing LATE, one-key Join.",
+  "author": { "name": "Ventz Petkov" },
+  "homepage": "https://tardy.vpetkov.net",
+  "repository": "https://github.com/ventz/tardy",
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}
