@@ -121,6 +121,11 @@ Tardy updates itself with [Sparkle](https://sparkle-project.org).
 - **Bump `CFBundleVersion` every release.** Sparkle orders releases by it, not by
   `CFBundleShortVersionString`.
 - **Debug builds never check** (no `SUFeedURL`, `.debug` bundle ID).
+- **Checks follow the wall clock, and installs wait for a quiet moment.** The 10-minute safety
+  refresh runs `Updater.checkIfDue`, because Sparkle's own timer doesn't count sleep. A
+  downloaded update installs and relaunches on the next refresh with no meeting within
+  15 minutes or LATE and the menu and Settings closed, since the service never quits. See
+  [ARCHITECTURE.md](ARCHITECTURE.md#pitfalls).
 
 ## Cutting a release
 

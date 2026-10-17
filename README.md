@@ -74,7 +74,7 @@ To build from source, see [docs/DEVELOPING.md](docs/DEVELOPING.md).
 - **Always running:** "Run as a service" (on by default) starts Tardy at login and reopens it within seconds if it quits or crashes
 - **Keyboard shortcut:** ⇧⌘M opens and closes the menu from anywhere; change it in Settings > Shortcuts
 - **Light on battery:** wakes only when something on screen needs to change, and refreshes when your calendars change instead of polling
-- **Automatic updates** through [Sparkle](https://sparkle-project.org)
+- **Automatic updates** through [Sparkle](https://sparkle-project.org), installed when no meeting is coming up
 
 ## Supported Meeting Providers
 

@@ -155,5 +155,18 @@ A Carbon `RegisterEventHotKey` hotkey needs no Accessibility permission. Getting
   even `activate(ignoringOtherApps:)` are ignored, and `orderFrontRegardless` puts the window
   under the active app's front window. `NSWindow.bringToFront()` floats the window until
   Tardy becomes active or the user switches to another app.
+- **Sparkle's windows open under the floating Settings window.** They are normal-level, so
+  "Check for Updates Now" opened its windows behind Settings. `Updater` brings each Sparkle
+  window forward as it appears (the user-driver delegate's will-show calls, then a few
+  run-loop passes, since the window shows after the call returns).
+- **Sparkle's scheduled check doesn't count sleep.** It schedules its daily check with an
+  NSTimer when the process starts, and NSTimers don't advance while the Mac sleeps, so a
+  service copy that runs for days fell days behind (no check from Oct 2 to Oct 5, 2026).
+  The 10-minute safety refresh, which also runs on wake, calls `Updater.checkIfDue`, a
+  wall-clock check against `updateCheckInterval`.
+- **A silently downloaded update waits for quit, and the service never quits.** Tardy takes
+  over `willInstallUpdateOnQuit` and installs it on a safety refresh when nothing is going on:
+  no meeting within 15 minutes or LATE, the menu and Settings closed. Sparkle relaunches;
+  `Service.restartIfUpdated` covers the launchd copy.
 - **Offscreen renders lie** about menu bar and menu layout. Confirm visual changes in the real
   menu bar.

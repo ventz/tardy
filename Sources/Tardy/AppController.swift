@@ -149,6 +149,18 @@ final class AppController: NSObject, NSMenuDelegate {
         scheduleTick(delay)
     }
 
+    /// An update relaunches Tardy, so it waits while the menu or Settings is open and while
+    /// a meeting is within its alert window or LATE.
+    private func isBusyForUpdate(now: Date) -> Bool {
+        if menuOpen || NSApp.windows.contains(where: { $0.isVisible && $0.frameAutosaveName == "TardySettings" }) {
+            return true
+        }
+        return calendars.meetings.contains {
+            let until = $0.start.timeIntervalSince(now)
+            return !dismissed.contains($0.id) && until <= Timing.alert && until > -Timing.lateAutoDismiss
+        }
+    }
+
     private func refreshSoon() {
         calendars.invalidate()
         scheduleTick(0.5) // short delay coalesces notification bursts
@@ -164,6 +176,8 @@ final class AppController: NSObject, NSMenuDelegate {
             rebuildMeetings()
             directory.update(groups: calendars.groups(), hasAccess: calendars.hasAccess)
             dismissed.formIntersection(calendars.meetings.map(\.id))
+            updater.checkIfDue(now: now)
+            updater.installIfIdle(isBusy: isBusyForUpdate(now: now))
         }
 
         var active = calendars.meetings.filter {
