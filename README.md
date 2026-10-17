@@ -1,5 +1,7 @@
 <div align="center">
 
+<p><strong>⭐ If Tardy is useful to you, please <a href="https://github.com/ventz/tardy">star the repo</a>.</strong></p>
+
 <img src="docs/images/tardy-icon.png" alt="Tardy logo: a calendar page headed LATE with a ringing red alarm clock" width="160">
 
 <h1>Tardy</h1>
@@ -13,6 +15,7 @@ Mac Calendar app and escalates as a meeting gets closer, from a quiet dot to a f
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
 <img src="https://img.shields.io/badge/macOS-14%2B-lightgrey.svg" alt="macOS 14+">
 <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6">
+<a href="https://github.com/ventz/tardy/stargazers"><img src="https://img.shields.io/github/stars/ventz/tardy?style=social" alt="GitHub stars"></a>
 
 </div>
 
