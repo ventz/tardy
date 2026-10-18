@@ -1,6 +1,6 @@
 <div align="center">
 
-<p><strong>⭐ If Tardy is useful to you, please <a href="https://github.com/ventz/tardy">star the repo</a>.</strong></p>
+<p><strong>⭐ If Tardy is useful to you, please star it: click the ☆ Star button at the top right of the <a href="https://github.com/ventz/tardy">GitHub repo page</a>.</strong></p>
 
 <img src="docs/images/tardy-icon.png" alt="Tardy logo: a calendar page headed LATE with a ringing red alarm clock" width="160">
 
