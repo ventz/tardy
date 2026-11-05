@@ -268,6 +268,25 @@ wrangler r2 object put "$BUCKET/Tardy.dmg" \
     --file "$dmg" --content-type application/x-apple-diskimage \
     --cache-control "max-age=300" --remote
 
+# Release notes and this build's deltas are referenced (and signed) in the
+# appcast too. Until 1.0.7 they were never uploaded, so the updater showed no
+# notes and every delta 404'd back to the full DMG.
+if [[ -n "$notes_file" ]]; then
+    notes="$release_dir/Tardy-$version.${notes_file##*.}"
+    case "$notes" in
+        *.md) notes_type="text/markdown; charset=utf-8" ;;
+        *.html) notes_type="text/html; charset=utf-8" ;;
+        *) notes_type="text/plain; charset=utf-8" ;;
+    esac
+    wrangler r2 object put "$BUCKET/$(basename "$notes")" \
+        --file "$notes" --content-type "$notes_type" --remote
+fi
+for delta in "$release_dir"/Tardy"$build_number"-*.delta; do
+    [[ -e "$delta" ]] || continue
+    wrangler r2 object put "$BUCKET/$(basename "$delta")" \
+        --file "$delta" --content-type application/octet-stream --remote
+done
+
 # The feed goes last: nothing should advertise a build that isn't downloadable
 wrangler r2 object put "$BUCKET/appcast.xml" \
     --file "$release_dir/appcast.xml" --content-type application/xml \
