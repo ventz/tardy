@@ -246,6 +246,7 @@ final class AppController: NSObject, NSMenuDelegate {
         if settings.sounds.playsSounds(for: meeting) {
             alerts.sound(count: settings.sounds.beeps(at: index))
         }
+        guard settings.sounds.postsNotification(for: meeting) else { return }
         alerts.notify("Meeting in \(alert.minutes) minute\(alert.minutes == 1 ? "" : "s")", meeting.title)
     }
 

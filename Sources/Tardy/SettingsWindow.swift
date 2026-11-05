@@ -150,7 +150,7 @@ struct SettingsActions {
 // MARK: - Views
 
 private enum SettingsPane: String, CaseIterable, Identifiable {
-    case general, alerts, calendars, clock, shortcuts, updates, data
+    case general, alerts, quietHours, calendars, clock, shortcuts, updates, data
 
     var id: String { rawValue }
 
@@ -158,6 +158,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .general: "General"
         case .alerts: "Alerts"
+        case .quietHours: "Quiet Hours"
         case .calendars: "Calendars"
         case .clock: "Clock"
         case .shortcuts: "Shortcuts"
@@ -170,6 +171,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .general: "gearshape"
         case .alerts: "bell"
+        case .quietHours: "moon"
         case .calendars: "calendar"
         case .clock: "clock"
         case .shortcuts: "command"
@@ -203,6 +205,7 @@ struct SettingsView: View {
             switch pane ?? .general {
             case .general: GeneralPane(settings: settings)
             case .alerts: AlertsPane(settings: settings, preview: previewSound)
+            case .quietHours: QuietHoursPane(settings: settings)
             case .calendars: CalendarsPane(settings: settings, directory: directory)
             case .clock: ClockPane(settings: settings)
             case .shortcuts: ShortcutsPane(settings: settings, actions: shortcuts)
@@ -460,6 +463,116 @@ private struct AlertsPane: View {
         var updated = alerts
         updated.remove(at: index)
         settings.sounds.setAlerts(updated)
+    }
+}
+
+/// Quiet hours: per day (or group of days), the alert hours when meetings may make a
+/// sound; quiet the rest of the time.
+private struct QuietHoursPane: View {
+    @ObservedObject var settings: SettingsStore
+
+    private var quiet: Binding<QuietHours> { $settings.sounds.quietHours }
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: quiet.enabled) {
+                    Text("Quiet outside alert hours")
+                    Text("Turn on to set when alerts may sound. Meetings that start at any other time are quiet.")
+                }
+                Toggle(isOn: quiet.includeNotifications) {
+                    Text("Silence notifications too")
+                    Text("Off: quiet meetings still get the notification, just without sound.")
+                }
+                .disabled(!settings.sounds.quietHours.enabled)
+            } footer: {
+                if settings.muteSounds {
+                    Text("Sounds are muted in Alerts, so nothing sounds at any hour.").foregroundStyle(.secondary)
+                }
+            }
+            QuietHoursSection(quiet: quiet)
+                .disabled(!settings.sounds.quietHours.enabled)
+        }
+        .formStyle(.grouped)
+        .navigationTitle("Quiet Hours")
+    }
+}
+
+/// The alert hours themselves, greyed out until quiet hours are on.
+private struct QuietHoursSection: View {
+    @Binding var quiet: QuietHours
+
+    var body: some View {
+        Section {
+            Picker("Set hours for", selection: $quiet.schedule) {
+                Text("Every day — same hours all week").tag(QuietHours.Schedule.everyDay)
+                Text("Weekdays and weekends — Mon–Fri, Sat–Sun").tag(QuietHours.Schedule.weekdaysWeekend)
+                Text("Each day — set per day").tag(QuietHours.Schedule.eachDay)
+            }
+            ForEach(quiet.groups(), id: \.slot) { group in
+                DayHoursRow(title: group.title, hours: Binding(
+                    get: { quiet.hours(for: group) },
+                    set: { quiet.set($0, for: group) }
+                ))
+            }
+        } header: {
+            Text("Alert hours (quiet the rest of the time)")
+        } footer: {
+            Text("Judged by when the meeting starts, so the alerts before an 8:00 meeting still play. The menu bar still counts down.")
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// One day (or group of days): alerts on or off, and from when to when.
+private struct DayHoursRow: View {
+    let title: String
+    @Binding var hours: DayHours
+
+    private static let step = 30
+
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
+            // A menu naming the day's mode, not a switch: a switch beside "Quiet all day"
+            // read as "turn quiet on" (user, 2026-11-05).
+            Picker(title, selection: $hours.alerts) {
+                Text("Alerts").tag(true)
+                Text("Quiet all day").tag(false)
+            }
+            .labelsHidden()
+            .fixedSize()
+            if hours.alerts {
+                Picker("From", selection: Binding(get: { hours.start }, set: { hours.setStart($0) })) {
+                    ForEach(options(Array(stride(from: 0, to: DayHours.minutesPerDay, by: Self.step)), hours.start), id: \.self) {
+                        Text(Self.label($0)).tag($0)
+                    }
+                }
+                .labelsHidden()
+                .fixedSize()
+                Text("to").foregroundStyle(.secondary)
+                Picker("To", selection: Binding(get: { hours.end }, set: { hours.setEnd($0) })) {
+                    ForEach(options(Array(stride(from: Self.step, through: DayHours.minutesPerDay, by: Self.step)), hours.end)
+                        .filter { $0 > hours.start }, id: \.self) {
+                        Text(Self.label($0)).tag($0)
+                    }
+                }
+                .labelsHidden()
+                .fixedSize()
+            }
+        }
+    }
+
+    /// The grid plus the current value, so an imported off-grid time still shows.
+    private func options(_ grid: [Int], _ current: Int) -> [Int] {
+        grid.contains(current) ? grid : (grid + [current]).sorted()
+    }
+
+    private static func label(_ minutes: Int) -> String {
+        if minutes == 0 || minutes == DayHours.minutesPerDay { return "Midnight" }
+        let date = Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()) ?? Date()
+        return date.formatted(date: .omitted, time: .shortened)
     }
 }
 

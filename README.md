@@ -126,10 +126,15 @@ it off to choose each count. Add up to 5 alerts, 1 to 60 minutes before. **Skip 
 meetings without a meeting link** (off by default) keeps in-person and phone meetings quiet:
 their notifications still appear, and the menu bar still counts down.
 
+**Alert hours** (on by default) keep meetings quiet unless they start within them:
+8 AM to 6 PM on weekdays, never on weekends. Set them for every day at once, for
+weekdays and weekends, or for each day, or set a day to quiet all day. They live in **Settings > Quiet
+Hours**; notifications still appear unless you also choose **Silence notifications too**.
+
 - **Click** the icon for today's meetings, Join and Dismiss, Mute Sounds and **Settings…** (⌘,).
   With Run as a service on, **Quit Tardy** reopens it a few seconds later; turn the service off
   in Settings > General to quit for good.
-- **Settings** has panes for General (launch at login, run as a service), Alerts (mute, sound schedule, skip meetings without a link),
+- **Settings** has panes for General (launch at login, run as a service), Alerts (mute, sound schedule, skip meetings without a link), Quiet Hours,
   Calendars (watch each one, Personal or Work), Clock, Shortcuts, Updates, and Import & Export.
 - **⇧⌘M** (configurable) toggles the menu. Leave it open to watch the live clock.
 

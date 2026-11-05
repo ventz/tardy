@@ -69,6 +69,7 @@ import Testing
             Meeting(id: "m", title: "t", start: .distantFuture, end: .distantFuture, calendarID: "c", link: link)
         }
         var sounds = AlertSounds()
+        sounds.quietHours.enabled = false
         #expect(!sounds.skipWithoutLink)
         #expect(sounds.playsSounds(for: meeting(nil)))
         sounds.skipWithoutLink = true

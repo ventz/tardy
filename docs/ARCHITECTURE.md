@@ -48,6 +48,10 @@ configured alert plays its sounds and posts a notification once per meeting. Whe
 alerts have already passed (launch or wake at T-3), only the most recent one plays.
 With `skipWithoutLink` on, a meeting with no recognized Join link (`Meeting.link == nil`)
 still gets the notification but no sounds.
+`QuietHours` (inside `AlertSounds`) does the same for meetings that *start* outside the
+day's alert hours, judged in the Mac's current calendar and time zone; with
+`includeNotifications` it drops the notification too. It is decided by the meeting's start,
+not the clock, so the alerts before an 8:00 meeting play at 7:50.
 `TickScheduler` wakes for alerts beyond the 15-minute 1 s window.
 
 Entry actions fire once per meeting per state (`entered`). Joining or dismissing adds

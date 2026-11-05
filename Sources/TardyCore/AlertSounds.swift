@@ -24,6 +24,8 @@ public struct AlertSounds: Codable, Equatable, Sendable {
     public var progressive = true
     /// Meetings without a Join link (in person, phone) post the notification silently.
     public var skipWithoutLink = false
+    /// Meetings starting outside these hours make no sound.
+    public var quietHours = QuietHours()
     public private(set) var alerts: [SoundAlert] = [
         SoundAlert(minutes: 10, beeps: 1),
         SoundAlert(minutes: 5, beeps: 2),
@@ -32,9 +34,11 @@ public struct AlertSounds: Codable, Equatable, Sendable {
 
     public init() {}
 
-    public init(progressive: Bool, alerts: [SoundAlert], skipWithoutLink: Bool = false) {
+    public init(progressive: Bool, alerts: [SoundAlert], skipWithoutLink: Bool = false,
+                quietHours: QuietHours = QuietHours()) {
         self.progressive = progressive
         self.skipWithoutLink = skipWithoutLink
+        self.quietHours = quietHours
         self.alerts = Self.normalized(alerts)
     }
 
@@ -43,9 +47,15 @@ public struct AlertSounds: Codable, Equatable, Sendable {
         progressive ? min(index + 1, Self.beepRange.upperBound) : alerts[index].beeps
     }
 
-    /// Whether alerts for `meeting` play sounds; the notification posts either way.
-    public func playsSounds(for meeting: Meeting) -> Bool {
-        !skipWithoutLink || meeting.link != nil
+    /// Whether alerts for `meeting` play sounds.
+    public func playsSounds(for meeting: Meeting, calendar: Calendar = .current) -> Bool {
+        (!skipWithoutLink || meeting.link != nil) && !quietHours.silences(meeting.start, calendar: calendar)
+    }
+
+    /// Whether alerts for `meeting` post a notification: always, unless quiet hours
+    /// cover notifications too.
+    public func postsNotification(for meeting: Meeting, calendar: Calendar = .current) -> Bool {
+        !(quietHours.includeNotifications && quietHours.silences(meeting.start, calendar: calendar))
     }
 
     public mutating func setAlerts(_ new: [SoundAlert]) {
@@ -90,7 +100,7 @@ public struct AlertSounds: Codable, Equatable, Sendable {
         return latest
     }
 
-    private enum CodingKeys: String, CodingKey { case progressive, alerts, skipWithoutLink }
+    private enum CodingKeys: String, CodingKey { case progressive, alerts, skipWithoutLink, quietHours }
 
     /// Missing keys take their defaults; values from a file are clamped.
     public init(from decoder: Decoder) throws {
@@ -98,6 +108,7 @@ public struct AlertSounds: Codable, Equatable, Sendable {
         let d = AlertSounds()
         progressive = try c.decodeIfPresent(Bool.self, forKey: .progressive) ?? d.progressive
         skipWithoutLink = try c.decodeIfPresent(Bool.self, forKey: .skipWithoutLink) ?? d.skipWithoutLink
+        quietHours = (try? c.decodeIfPresent(QuietHours.self, forKey: .quietHours)) ?? d.quietHours
         alerts = Self.normalized(try c.decodeIfPresent([SoundAlert].self, forKey: .alerts) ?? d.alerts)
     }
 }

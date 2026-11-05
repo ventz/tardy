@@ -21,6 +21,7 @@ defaults read net.vpetkov.tardy
 |---|---|
 | General | Launch at login, run as a service, version |
 | Alerts | Mute sounds and notifications; progressive sounds; skip sounds for meetings without a meeting link; up to 5 alerts, each 1–60 minutes before with 1–5 sounds and a preview |
+| Quiet Hours | Alert hours (when sounds play) for every day, weekdays and weekends, or each day; a day can be set to Quiet all day; optionally silence notifications too |
 | Calendars | Watch each calendar from the Mac Calendar app; mark it Personal (red) or Work (blue) |
 | Clock | Menu bar clock on or off; seconds, AM/PM, 24-hour, day of week, date; live preview |
 | Shortcuts | Record the global open/close shortcut (default ⇧⌘M) or turn it off; lists the in-menu shortcuts |
@@ -51,10 +52,19 @@ The menu's own clock always shows seconds.
   "exportedAt" : "2026-09-16T21:40:00Z",
   "format" : "tardy-settings",
   "muteSounds" : false,
-  "sounds" : { "alerts" : [ { "beeps" : 1, "minutes" : 10 }, { "beeps" : 2, "minutes" : 5 }, { "beeps" : 3, "minutes" : 2 } ], "progressive" : true, "skipWithoutLink" : false },
+  "sounds" : { "alerts" : [ { "beeps" : 1, "minutes" : 10 }, { "beeps" : 2, "minutes" : 5 }, { "beeps" : 3, "minutes" : 2 } ], "progressive" : true, "skipWithoutLink" : false,
+    "quietHours" : { "days" : [ { "alerts" : false, "end" : 1080, "start" : 480 }, { "alerts" : true, "end" : 1080, "start" : 480 }, { "alerts" : true, "end" : 1080, "start" : 480 }, { "alerts" : true, "end" : 1080, "start" : 480 }, { "alerts" : true, "end" : 1080, "start" : 480 }, { "alerts" : true, "end" : 1080, "start" : 480 }, { "alerts" : false, "end" : 1080, "start" : 480 } ],
+      "enabled" : true, "everyDay" : { "alerts" : true, "end" : 1080, "start" : 480 }, "includeNotifications" : false,
+      "schedule" : "weekdaysWeekend", "weekdays" : { "alerts" : true, "end" : 1080, "start" : 480 }, "weekend" : { "alerts" : false, "end" : 1080, "start" : 480 } } },
   "version" : 1
 }
 ```
+
+`quietHours` holds the alert hours (when sounds play) for each `schedule`: `everyDay`,
+`weekdays` + `weekend`, and `days` (seven, Sunday first, for `eachDay`). Only the selected
+schedule applies; the others are kept so switching back loses nothing. `start` and `end` are
+minutes after midnight (1440 is midnight at the end of the day), and `"alerts" : false` means
+quiet all day.
 
 The file also carries the shortcut (`"shortcut": {"enabled": …, "shortcut": {…}}`); files
 exported before shortcuts were configurable simply leave it unchanged.
@@ -73,7 +83,7 @@ sound alerts missing from an older file take their defaults.
 | `workCalendarIDs` | array of calendar IDs | empty (every calendar Personal) |
 | `clock` | JSON data | menu bar clock off |
 | `muteSounds` | bool | `false` |
-| `alertSounds` | JSON data (`progressive`, `skipWithoutLink`, `alerts` of `minutes` + `beeps`) | 10, 5, 2 min; progressive (1, 2, 3 sounds); sounds for every meeting |
+| `alertSounds` | JSON data (`progressive`, `skipWithoutLink`, `alerts` of `minutes` + `beeps`, `quietHours`) | 10, 5, 2 min; progressive (1, 2, 3 sounds); sounds for every meeting starting 8 AM–6 PM on weekdays |
 | `menuShortcut` | JSON data (Carbon key code, modifiers, label) | ⇧⌘M |
 | `menuShortcutEnabled` | bool | `true` |
 | `didEnableService` | bool | state, not a setting: Run as a service was turned on at first launch |
